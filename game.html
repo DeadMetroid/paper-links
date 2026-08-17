@@ -1498,9 +1498,107 @@ function bunkers() {
   };
 }
 
+// 4. THE AERIAL — 4 flags
+// Catwalks over open void, and the TIER SHORTCUT: a four-tile jump off the far edge of a
+// junction onto a shelf 3.4 below, then a tube the rest of the way. It skips a leg AND
+// the checkpoint on it, and it is the only declared skip in the game.
+//
+// Two branches between the same two junctions have the same Manhattan length whatever
+// route they take, because every leg runs +wx or +wy and nothing ever runs back. So the
+// shortcut's saving in DISTANCE is small by construction — it is real (test 33 measures
+// it) but it is four tiles, not fourteen. The saving that makes it worth taking is in
+// TIME: the leg it skips is ROUGH, drag 2.6, where terminal speed is 4.1 rather than
+// 10.7. Skipping it buys about two and a half seconds against a three-second flag.
+function aerial() {
+  var P = [], z = 40;
+  P.push(pad(0, 0, 8, 8, z));
+
+  // Opens on a CAMBER — no ramp, no chute, no wave. Sixteen tiles of leaning before this
+  // course has asked you for anything else.
+  var b0 = bankX(8, 1, 16, 6, z, 0.18, 0.9);            P.push(b0);   z = b0.exit;
+  var g1 = gateX(24, 3, 4, 3, z);                       P.push(g1);
+
+  P.push(pad(28, 0, 10, 10, z));
+  P.push(cut(34, 0, 4, 4));
+
+  // CATWALK 1 — five tiles wide, twenty long, void on both sides for all of it.
+  var cw1 = rampY(30, 10, 5, 20, z, 0.20);              P.push(cw1);  z = cw1.exit;
+
+  P.push(pad(28, 30, 12, 10, z));
+  P.push(bowl(30, 33, 8, 5, z, 0.35));
+  var g2 = gateX(40, 33, 4, 3, z);                      P.push(g2);
+
+  // CATWALK 2 — a RIDGE this time. Both edges fall away, so the drift finishes itself.
+  var cw2 = crownX(44, 32, 14, 7, z, 0.20, 0.45);       P.push(cw2);  z = cw2.exit;
+
+  // The junction the shortcut leaves from. Its far edge is a lip over four tiles of void.
+  // The carve is a notch in the corner and a dish across the middle — NOT a hole where a
+  // line goes: cut at (60,33) it sat exactly on both routes and the oracle drove into it
+  // four runs out of four. A donut is only content if the hole is somewhere you can miss.
+  P.push(pad(58, 30, 14, 10, z));
+  P.push(cut(58, 30, 4, 2));
+  P.push(bowl(64, 33, 8, 4, z, 0.35));
+
+  var zJ4 = 22.5;
+
+  // THE LONG WAY — through the third checkpoint, and then sixteen tiles of rough paper.
+  var g3 = gateX(72, 33, 4, 3, z);                      P.push(g3);
+  var fl = rampX(76, 31, 16, 8, z, 0.22);               P.push(fl);
+  P.push(rough(76, 31, 16, 8));
+  // The elbow goes at the ramp's END, never under it: a rampX's height varies along x, so
+  // a flat pad laid over its last cells disagrees with every corner it touches. Eight
+  // seams in one line, and the compiler named all eight.
+  P.push(pad(92, 31, 8, 8, fl.exit));
+  var fr = rampY(92, 39, 7, 17, fl.exit, (fl.exit - zJ4) / 17);     P.push(fr);
+
+  // THE SHORTCUT — off the lip at y=40, four tiles of void, 3.4 down, into a tube. It
+  // arrives with most of the descent already spent, so the tube is shallow and what it
+  // carries is the speed the jump gave it.
+  var tb = tubeY(66, 43, 7, 13, z - 3.4, 0.22, 1.1);    P.push(tb);
+  P.push(pad(66, 56, 7, 6, tb.exit));
+  var sx = rampX(73, 56, 15, 6, tb.exit, (tb.exit - zJ4) / 15);     P.push(sx);
+
+  P.push(pad(88, 56, 14, 10, zJ4));
+  P.push(bowl(90, 58, 9, 6, zJ4, 0.35));
+  var g4 = gateY(93, 66, 3, 4, zJ4);                    P.push(g4);
+
+  var tb2 = tubeY(90, 70, 8, 16, zJ4, 0.22, 1.0);       P.push(tb2);
+  P.push(pad(88, 89, 12, 12, tb2.exit - 2.0, SURF.GREEN));
+  P.push(greenDish(90, 91, 8, 8, tb2.exit - 2.0, 0.4));
+
+  return {
+    name: 'THE AERIAL',
+    parTime: 29, bonus: 3,
+    pieces: P,
+    start: { x: 4, y: 4 },
+    cup: { x: 94, y: 95, r: 0.9 },
+    // The only flag in the game any route is allowed to miss.
+    flags: [g1.flag, g2.flag, skips(g3.flag, [1]), g4.flag],
+    routes: [
+      // 0 — the long way, all four checkpoints, through the rough.
+      [{ x: 4, y: 4 }, { x: 16, y: 4 }, g1.flag, { x: 31, y: 4 }, { x: 32, y: 11 },
+       { x: 32, y: 20 }, { x: 32, y: 28 }, { x: 31, y: 34 }, { x: 36, y: 35 },
+       g2.flag, { x: 50, y: 35 }, { x: 58, y: 35 }, { x: 66, y: 35 }, g3.flag,
+       { x: 80, y: 35 }, { x: 92, y: 35 }, { x: 96, y: 36 }, { x: 95.5, y: 44 },
+       { x: 95.5, y: 52 }, { x: 94, y: 60 }, g4.flag, { x: 94, y: 74 },
+       { x: 94, y: 84 }, { x: 94, y: 88 }, { x: 94, y: 93 }, { x: 94, y: 95 }],
+      // 1 — the shortcut: off the lip, over the void, into the tube. Skips flag 3.
+      [{ x: 4, y: 4 }, { x: 16, y: 4 }, g1.flag, { x: 31, y: 4 }, { x: 32, y: 11 },
+       { x: 32, y: 20 }, { x: 32, y: 28 }, { x: 31, y: 34 }, { x: 36, y: 35 },
+       g2.flag, { x: 50, y: 35 }, { x: 58, y: 35 }, { x: 62, y: 36 }, { x: 65, y: 38 },
+       { x: 68, y: 39 }, { x: 68.5, y: 41.5 }, { x: 69, y: 45 }, { x: 69.5, y: 52 },
+       { x: 69.5, y: 59 },
+       { x: 78, y: 59 }, { x: 88, y: 59 }, { x: 93, y: 61 }, g4.flag, { x: 94, y: 74 },
+       { x: 94, y: 84 }, { x: 94, y: 88 }, { x: 94, y: 93 }, { x: 94, y: 95 }],
+    ],
+    hazards: [haz('post', 33, 2), haz('gate', 32, 20, 0.4), haz('tree', 30, 36),
+              haz('windmill', 62, 31), haz('bench', 96, 34), haz('washer', 93, 62)],
+  };
+}
+
 // The factories, in play order. Each call builds a FRESH course object: compile() fills
 // derived fields in place, so a course is never compiled twice.
-var COURSE_DEFS = [practice, ladder, bunkers];
+var COURSE_DEFS = [practice, ladder, bunkers, aerial];
 
 var _courseCache = [];
 function getCourse(i) {
