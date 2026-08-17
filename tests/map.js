@@ -83,7 +83,8 @@ function report(ci) {
   console.log('  reach        ' + V.reachable(c, c.start, c.cup));
   console.log('  routes       ' + c.routes.map(function (r) { return r.total.toFixed(1); }).join(' / ') +
               '   off-paper ' + JSON.stringify(V.routeOffPaper(c)) +
-              '   off-axis ' + V.offAxisLegs(c).length);
+              '   off-axis ' + JSON.stringify(V.offAxisLegs(c).map(function (b) {
+                return b.route + ':' + b.seg + ' dx' + b.dx.toFixed(1) + ' dy' + b.dy.toFixed(1); })));
   console.log('  flat square  ' + sq.size + ' at ' + JSON.stringify(sq.at) +
               '   rest ' + (rest.ratio * 100).toFixed(1) + '%');
   console.log('  branches     ' + JSON.stringify(br.map(function (b) {
