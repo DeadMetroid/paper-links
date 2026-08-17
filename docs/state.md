@@ -5,26 +5,32 @@ conversation.
 
 ## Current step
 
-**Section 16, step 3 — `src/level.js`, the piece compiler.** Tests 1–7 next.
+**Section 16, step 5 — `src/render.js`.** The banded sweep, slab sides, the parallax
+void, the cup shaft. After it: a playable game.
 
 ## Last three things done
 
-1. Step 1 complete and committed: `CLAUDE.md`, `docs/spec.md`, `docs/state.md`,
-   `README.md`, `ASSETS.md`, `docs/VIDEO_GUIDE.md`, `build.js`, the 52-test manifest,
-   the oracle verbatim.
-2. Step 2 complete: `src/tuning.js`, `src/heightfield.js`, `src/physics.js`,
-   `src/hazards.js`. Tests 15–18 green. 100,000 ticks with no NaN and no clamp breach.
-3. Built `tests/mutate.js` — a reusable mutation harness. 9 mutations, every one
-   reddens exactly the tests it declares. Two of them found test 17 was too narrow
-   (it only traced the ball) and the TEST was fixed, not the mutation.
+1. Step 3: `src/level.js` — the piece compiler, the perimeter-only seam check, the
+   two-ring dilation, `paperSpan`/`gateAt`, routes. Tests 1-9 green.
+2. Step 4: `src/levels.js` with PRACTICE GREEN verbatim, and the oracle wired.
+   **Both authored routes cleared, zero falls, first attempt.** Tests 11, 12 green.
+3. Mutation harness now at 17 mutations, every one reddening exactly what it declares.
+   Two of them found real weaknesses in the TESTS, both fixed in the test:
+   - test 2 sampled only cell centres, and `gradAt` at a cell centre reads that cell's
+     own two corner lines and nothing else — so it could not see the dilation being
+     removed at all. It now samples nine points per cell.
+   - test 2's "declared" bound compared a 1-D corner step against a 2-D gradient
+     magnitude. Each piece is now compiled ALONE through the same compiler and read
+     with the same sweep.
+   - test 8's branch signature recorded the SET of widths along the divergence, which
+     includes the junction both branches leave by, so two identical lanes looked
+     different. It now records the narrowest point.
 
 ## Next three up
 
-1. Step 3: `src/level.js` — piece compiler, two-ring dilation, seam report,
-   reachability, routes, the validators. Tests 1–7.
-2. Step 4: `src/levels.js` with PRACTICE GREEN verbatim + wire the oracle.
-   Tests 11 and 12 green on course 1 alone.
-3. Step 5: `src/render.js` — banded sweep, slab sides, parallax void, cup shaft.
+1. Step 5: `src/render.js` + `main.js`. Verify by loading `game.html` from `file://`.
+2. Step 6: `game.js`, `ui.js`, `save.js`. Tests 22, 23.
+3. Step 7/8: the hazard roster and the other five courses.
 
 ## Measured numbers
 
@@ -40,6 +46,15 @@ Derived, checked against the brief's stated values:
 | ballistics (test 15) | launch off a flat lip, 50 airborne ticks | x linear to 1e-9, z = semi-implicit parabola to 1e-9 |
 | clamp (test 18) | 100,000 ticks down a 0.9 slope with a belt and full input | peak speed 26.000000, no NaN |
 | determinism (test 17) | two runs, ball + every body traced every 7 ticks, 20 s | byte-identical |
+| course 1 seams | perimeter disagreements over 0.02 | **0** |
+| course 1 route length | route 0 / route 1 | 109.5 / 107.9 tiles (brief: 110) |
+| course 1 gates | every flag's derived trigger | cross 3 tiles, r = 1.38 |
+| course 1 declared slope | steepest piece compiled alone | 0.381 (the pond's rim) |
+| course 1 interior slope | LAW 5.2 margin-2 sweep | 0.381 — under SLOPE_CRIT, correct for course 1 |
+| course 1 largest flat square | LAW 6.8 DP | 8 (the tee), at (0,0) |
+| course 1 rest ratio | LAW 6.7 | 1.0% (target under 7%) |
+| oracle, course 1 | route 0 / route 1 | cleared, 0 falls, clock 21.8 / 21.9, credit 9 |
+| course 1 net time | clock - credit vs parTime 16, bandStep 4 | 12.8 -> -1 shot = BIRDIE |
 
 ## Deviations from the build order, and why
 

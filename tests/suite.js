@@ -136,3 +136,166 @@ test(18, 'the speed clamp holds on every tick', function () {
   lte(worst, PL.MAX_SPEED + 1e-9, 'the clamp was exceeded');
   gte(run.t, 100000 * PL.DT - 1e-6, 'the sim did not actually advance 100,000 ticks');
 });
+
+var V = require('./validate.js').mk(PL);
+
+// Every course that exists right now, compiled. The suite grows with the game: a test
+// that measures "all six" is written when the sixth is authored, not before.
+function courses() {
+  var out = [];
+  for (var i = 0; i < PL.courseCount(); i++) out.push(PL.getCourse(i));
+  return out;
+}
+function eachCourse(fn) { courses().forEach(function (c, i) { fn(c, i); }); }
+
+// ============================================================================
+// GEOMETRY AND TOPOLOGY
+// ============================================================================
+
+test(1, 'every course compiles with no seam between its pieces', function () {
+  // Heights live on lattice CORNERS and are shared between neighbouring cells, so two
+  // pieces that meet must agree on the boundary or the seam is a one-cell cliff.
+  eachCourse(function (c, i) {
+    if (!c.seams.length) return;
+    var lines = c.seams.slice(0, 8).map(function (s) {
+      return '    (' + s.x + ',' + s.y + ') ' + s.was.toFixed(3) + ' -> ' + s.now.toFixed(3) +
+             '  by piece #' + s.i + ' (' + s.kind + ')';
+    });
+    throw new Error('course ' + i + ' ' + c.name + ' has ' + c.seams.length +
+                    ' seam(s):\n' + lines.join('\n'));
+  });
+});
+
+test(2, 'no surface is steeper than the steepest thing an author declared', function () {
+  eachCourse(function (c, i) {
+    var d = V.declaredSlope(c), m = V.maxSlope(c, false);
+    // The compiled grid is a bilinear read of the same corners the pieces wrote, so it
+    // can never legitimately exceed the steepest corner step any piece asked for.
+    // Anything over that came from two pieces interacting, which is a bug, not a design.
+    lte(m.slope, d.slope + 1e-9,
+        'course ' + i + ' ' + c.name + ': grid reads ' + m.slope.toFixed(4) + ' at ' +
+        JSON.stringify(m.at) + ' but the steepest declared is ' + d.slope.toFixed(4) +
+        ' (' + JSON.stringify(d.who) + ')');
+  });
+});
+
+test(3, 'the tee can reach the cup, over paper or across a ledge', function () {
+  eachCourse(function (c, i) {
+    ok(V.reachable(c, c.start, c.cup), 'course ' + i + ' ' + c.name + ': tee cannot reach the cup');
+  });
+});
+
+test(4, 'the tee, the cup and every flag stand on solid paper', function () {
+  eachCourse(function (c, i) {
+    var g = c.grid, tag = 'course ' + i + ' ' + c.name + ': ';
+    eq(PL.solidAt(g, c.start.x, c.start.y), 1, tag + 'the tee is over the void');
+    eq(PL.solidAt(g, c.cup.x, c.cup.y), 1, tag + 'the cup is over the void');
+    c.flags.forEach(function (f, fi) {
+      eq(PL.solidAt(g, f.x, f.y), 1, tag + 'flag ' + fi + ' at ' + f.x + ',' + f.y + ' is over the void');
+      ok(PL.surfAt(g, f.x, f.y) !== PL.SURF.WATER, tag + 'flag ' + fi + ' stands in water');
+    });
+  });
+});
+
+test(5, 'a flag is somewhere the ball can actually stop, and so is every tee', function () {
+  // A checkpoint is also a respawn: the ball is set down with the world running and no
+  // key answered for two seconds. A gate on a slope is a gate you roll off during the
+  // hold, so the terminal speed of the ground it stands on is capped.
+  eachCourse(function (c, i) {
+    var tag = 'course ' + i + ' ' + c.name + ': ';
+    lte(V.terminalAt(c, c.start.x, c.start.y), PL.VTERM_MAX, tag + 'the tee is on a slope');
+    c.flags.forEach(function (f, fi) {
+      lte(V.terminalAt(c, f.x, f.y), PL.VTERM_MAX,
+          tag + 'flag ' + fi + ' sits where terminal speed is ' +
+          V.terminalAt(c, f.x, f.y).toFixed(2) + ', over VTERM_MAX ' + PL.VTERM_MAX);
+    });
+  });
+});
+
+test(6, 'every authored route runs over paper from end to end', function () {
+  eachCourse(function (c, i) {
+    var bad = V.routeOffPaper(c);
+    ok(!bad.length, 'course ' + i + ' ' + c.name + ': ' + JSON.stringify(bad) +
+       ' — a route may cross a LEDGE, but it may not wander off the level');
+  });
+});
+
+test(7, 'every leg runs along a world axis, never down the screen', function () {
+  // LAW 4.1 — in this projection a side wall on an edge parallel to (1,1) projects to a
+  // LINE: 0 px^2 of screen area. A corridor aimed at the bottom of the screen cannot show
+  // its sides at any thickness. "It looks flat" and "there are no paths at different
+  // angles" are one defect, and it is geometric, not artistic.
+  eachCourse(function (c, i) {
+    var bad = V.offAxisLegs(c);
+    ok(!bad.length, 'course ' + i + ' ' + c.name + ' has diagonal leg(s): ' + JSON.stringify(bad));
+    // And the pieces themselves are axis-aligned rectangles on the lattice, by construction.
+    c.pieces.forEach(function (p, pi) {
+      ok(p.w >= 1 && p.h >= 1 && p.w === Math.round(p.w) && p.h === Math.round(p.h),
+         'course ' + i + ' piece #' + pi + ' (' + p.kind + ') is not a lattice rectangle: ' +
+         p.w + 'x' + p.h);
+      ok(p.axis === 'x' || p.axis === 'y',
+         'course ' + i + ' piece #' + pi + ' (' + p.kind + ') declares no world axis');
+    });
+  });
+});
+
+test(8, 'every course has a fork that is really a fork', function () {
+  // LAW 6.5 — a fork is two lanes; a BRANCH is two paths. The first build called it a
+  // fork when two identical ramps ran side by side two tiles apart and rejoined on the
+  // next pad: same slope, same width, same threats, NO REASON TO PREFER EITHER.
+  eachCourse(function (c, i) {
+    var bs = V.branches(c);
+    ok(bs.length, 'course ' + i + ' ' + c.name + ' has no divergent route pair at all');
+    var real = bs.filter(function (b) { return b.diff.length > 0; });
+    ok(real.length, 'course ' + i + ' ' + c.name + ': its branches are the same lane twice — ' +
+       JSON.stringify(bs.map(function (b) { return b.sa; })));
+  });
+});
+
+test(9, 'every threat fits on the ground it stands on', function () {
+  // LAW 9.2 and 9.3. On its first run against a hand-placed roster this caught ELEVEN,
+  // including a golfer with a twelve-tile leash on four tiles of catwalk.
+  eachCourse(function (c, i) {
+    var bad = V.hazardIssues(c);
+    ok(!bad.length, 'course ' + i + ' ' + c.name + ':\n    ' +
+       bad.map(function (b) { return b.name + ' #' + b.i + ': ' + b.why; }).join('\n    '));
+  });
+});
+
+// The fairness oracle drives each authored route using exactly the input a human gets,
+// quantised to the eight directions a keyboard can produce. Until it exists you cannot
+// tell whether a course you wrote is passable.
+var ORACLE = require('./oracle.js').makeOracle(PL);
+var _driven = {};
+function drive(ci, ri) {
+  var key = ci + ':' + ri;
+  if (!_driven[key]) _driven[key] = ORACLE.driveRoute(PL.getCourse(ci), ri);
+  return _driven[key];
+}
+
+test(11, 'the oracle clears every course on every authored route', function () {
+  eachCourse(function (c, i) {
+    c.routes.forEach(function (r, ri) {
+      var res = drive(i, ri);
+      var b = res.run.ball;
+      ok(res.ok, 'course ' + i + ' ' + c.name + ' route ' + ri + ': stalled at ' +
+         (res.progress * 100).toFixed(1) + '% of the route, at (' + b.x.toFixed(1) + ',' +
+         b.y.toFixed(1) + ',' + b.z.toFixed(1) + ') after ' + res.ticks + ' ticks');
+    });
+  });
+});
+
+test(12, 'it clears them without falling off once', function () {
+  eachCourse(function (c, i) {
+    c.routes.forEach(function (r, ri) {
+      var res = drive(i, ri);
+      eq(res.falls, 0, 'course ' + i + ' ' + c.name + ' route ' + ri +
+         ': a flawless line still fell ' + res.falls + ' time(s)');
+      res.flags.forEach(function (hit, fi) {
+        var f = c.flags[fi];
+        if (f.skip && f.skip.indexOf(ri) !== -1) return;
+        ok(hit, 'course ' + i + ' route ' + ri + ' drove past flag ' + fi + ' without claiming it');
+      });
+    });
+  });
+});

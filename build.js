@@ -15,7 +15,9 @@ var MODULES = [
   'tuning.js',
   'heightfield.js',
   'physics.js',
+  'level.js',
   'hazards.js',
+  'levels.js',
 ];
 
 var SRC = path.join(__dirname, 'src');
