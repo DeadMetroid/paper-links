@@ -1,0 +1,8 @@
+# Narrow on purpose. Nothing here may ever exclude docs/, src/, tests/, .claude/ or any
+# committed artifact — an instruction file on disk and not in `git ls-files` is a
+# disqualification. Verified with `git ls-files`, never by looking at the folder.
+node_modules/
+package-lock.json
+.claude/.floor-gate-count
+.claude/floor-gate.log
+tests/_out/
