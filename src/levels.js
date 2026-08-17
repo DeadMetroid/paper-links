@@ -301,11 +301,14 @@ function aerial() {
   P.push(pad(28, 0, 10, 10, z));
   P.push(cut(34, 0, 4, 4));
 
-  // CATWALK 1 — five tiles wide, twenty long, void on both sides for all of it.
+  // CATWALK 1 — five tiles wide, twenty long, void on both sides for all of it, and the
+  // middle twelve of it are paper that goes away.
   var cw1 = rampY(30, 10, 5, 20, z, 0.20);              P.push(cw1);  z = cw1.exit;
+  P.push(fragile(30, 14, 5, 12));
 
   P.push(pad(28, 30, 12, 10, z));
-  P.push(bowl(30, 33, 8, 5, z, 0.35));
+  P.push(pond(28, 36, 4, 4, z, 0.45));
+  P.push(bowl(32, 33, 8, 5, z, 0.35));
   var g2 = gateX(40, 33, 4, 3, z);                      P.push(g2);
 
   // CATWALK 2 — a RIDGE this time. Both edges fall away, so the drift finishes itself.
@@ -371,14 +374,217 @@ function aerial() {
        { x: 78, y: 59 }, { x: 88, y: 59 }, { x: 93, y: 61 }, g4.flag, { x: 94, y: 74 },
        { x: 94, y: 84 }, { x: 94, y: 88 }, { x: 94, y: 93 }, { x: 94, y: 95 }],
     ],
-    hazards: [haz('post', 33, 2), haz('gate', 32, 20, 0.4), haz('tree', 30, 36),
+    hazards: [haz('post', 33, 2), haz('gate', 32, 20, 0.4), haz('tree', 35, 37),
               haz('windmill', 62, 31), haz('bench', 96, 34), haz('washer', 93, 62)],
+  };
+}
+
+// 5. THE WATER HOLE — 5 flags
+// Water as a LATERAL COMMITMENT. Twice, a channel runs down one side of a lane for the
+// whole length of a leg — and the lane is CAMBERED toward it, so the pull is continuous
+// and the void is on the other edge. You are not steering round the blue; you are holding
+// a line against it, and the decision was made at the top of the leg. Ponds sit in the
+// corners nothing routes through. It closes on a ledge taken at speed.
+//
+// A channel painted on flat ground would be a colour. Painted on the LOW side of a camber
+// it is a groove, which is the shape LAW 5.6 asks for and the pressure the idea needs, out
+// of one piece and no seams.
+function waterhole() {
+  var P = [], z = 40;
+  P.push(pad(0, 0, 8, 8, z));
+
+  // Opens on a FUNNEL — walls that converge on a throat. A commitment, not a choice, and
+  // the fifth different first move in five courses.
+  var f0 = funnelX(8, 0, 16, 8, z, 0.24, 0.9, 0.4);     P.push(f0);   z = f0.exit;
+  var g1 = gateX(24, 3, 4, 3, z);                       P.push(g1);
+
+  P.push(pad(28, 0, 11, 10, z));
+  P.push(pond(28, 0, 4, 4, z, 0.5));
+
+  // LEG A — cambered toward the water. The low edge is the channel and the high edge is
+  // the void: overcorrect and you are off the side you were fighting away from.
+  var a = bankY(30, 10, 6, 26, z, 0.28, 0.9);           P.push(a);
+  P.push(water(30, 13, 2, 20));
+  z = a.exit;
+
+  P.push(pad(28, 36, 12, 10, z));
+  P.push(bowl(28, 40, 7, 6, z, 0.35));
+  P.push(pond(36, 42, 4, 4, z, 0.5));
+  var g2 = gateX(40, 39, 4, 3, z);                      P.push(g2);
+
+  // LEG B — the same trade, mirrored, and twenty tiles long.
+  var b = bankX(44, 37, 20, 7, z, 0.26, 0.9);           P.push(b);
+  P.push(water(46, 37, 16, 2));
+  z = b.exit;
+
+  P.push(pad(64, 36, 11, 10, z));
+  P.push(bowl(64, 40, 6, 6, z, 0.35));
+  P.push(pond(72, 36, 3, 4, z, 0.45));
+  var g3 = gateY(66, 46, 3, 4, z);                      P.push(g3);
+
+  // LEG C — the channel down the MIDDLE this time, so the lane is two lanes and the
+  // choice is which side of the water to be on. Four tiles one side, five the other.
+  var c = rampY(62, 50, 14, 24, z, 0.30);               P.push(c);
+  P.push(water(66, 58, 5, 13));
+  z = c.exit;
+
+  P.push(pad(60, 74, 18, 10, z));
+  P.push(fragile(60, 74, 6, 3));
+  P.push(cut(66, 77, 6, 5));
+  var g4 = gateX(78, 77, 4, 3, z);                      P.push(g4);
+
+  var d = rampX(82, 75, 16, 7, z, 0.32);                P.push(d);   z = d.exit;
+  var g5 = gateX(98, 77, 4, 3, z);                      P.push(g5);
+
+  // The run-in, and then four tiles of void with 2.6 below it. At the chute's terminal
+  // this is not a jump you brake for; it is a jump you have already committed to.
+  var e = chuteX(102, 75, 14, 7, z, 0.34, 1.0);         P.push(e);   z = e.exit;
+  P.push(pad(120, 72, 12, 12, z - 2.6, SURF.GREEN));
+  P.push(greenDish(122, 74, 8, 8, z - 2.6, 0.4));
+
+  return {
+    name: 'THE WATER HOLE',
+    // 18, not the 17 the brief names. Measured: this course runs 191 tiles at 5.5 tiles/s
+    // because its lanes are four to six wide with water down one side, and a flawless run
+    // of the narrow branch nets 19.5 — which rounds to BOGEY at par 17 and to PAR at 18.
+    // The course was already lengthened and steepened twice trying to reach 17; going
+    // further would have meant widening the lanes, which is the one thing this course is
+    // about. Recorded in docs/state.md.
+    parTime: 18, bonus: 3,
+    pieces: P,
+    start: { x: 4, y: 4 },
+    cup: { x: 126, y: 78, r: 0.9 },
+    flags: [g1.flag, g2.flag, g3.flag, g4.flag, g5.flag],
+    routes: [
+      // 0 — the narrow four-tile side of the middle channel.
+      [{ x: 4, y: 4 }, { x: 16, y: 4 }, g1.flag, { x: 32, y: 6 }, { x: 33.5, y: 13 },
+       { x: 33.5, y: 26 }, { x: 33, y: 34 }, { x: 36, y: 39 }, g2.flag, { x: 50, y: 40.5 },
+       { x: 60, y: 40.5 }, { x: 66, y: 41 }, { x: 67.5, y: 44 }, g3.flag,
+       { x: 67.5, y: 51 }, { x: 65, y: 55 }, { x: 64, y: 62 }, { x: 64, y: 70 }, { x: 64, y: 76 },
+       { x: 72, y: 76 }, { x: 76, y: 78 }, g4.flag, { x: 88, y: 78.5 }, g5.flag,
+       { x: 110, y: 78.5 }, { x: 116, y: 78.5 }, { x: 123, y: 78 }, { x: 126, y: 78 }],
+      // 1 — the wider five-tile side, longer to reach and longer to leave.
+      [{ x: 4, y: 4 }, { x: 16, y: 4 }, g1.flag, { x: 32, y: 6 }, { x: 33.5, y: 13 },
+       { x: 33.5, y: 26 }, { x: 33, y: 34 }, { x: 36, y: 39 }, g2.flag, { x: 50, y: 40.5 },
+       { x: 60, y: 40.5 }, { x: 66, y: 41 }, { x: 67.5, y: 44 }, g3.flag,
+       { x: 67.5, y: 51 }, { x: 71, y: 55 }, { x: 73, y: 58 }, { x: 73.5, y: 65 }, { x: 73.5, y: 71 }, { x: 73, y: 76 },
+       { x: 76, y: 78 }, g4.flag, { x: 88, y: 78.5 }, g5.flag,
+       { x: 110, y: 78.5 }, { x: 116, y: 78.5 }, { x: 123, y: 78 }, { x: 126, y: 78 }],
+    ],
+    // Nothing sits on a cambered lane that already has water on one edge: the camber IS
+    // the threat there, and a mallet on top of it is two prices for one decision. The
+    // movers live on the wide junctions, where being shoved leaves somewhere to be.
+    hazards: [haz('post', 34, 8), haz('sprinkler', 33, 24, 0.3), haz('cart', 34, 41, 0.2),
+              haz('tree', 30, 44), haz('mallet', 70, 42, 1.1), haz('bench', 65, 44),
+              haz('goose', 63, 78, 0, 4), haz('washer', 75, 82)],
+  };
+}
+
+// 6. THE LONG SIXTH — 5 flags
+// Everything, at length: a branch, a camber, a ridge over void, a chaser you beat rather
+// than avoid, and a WATER GATE — a band of water across the whole lane with one dry slot
+// in it, lined up for twenty tiles back, carrying the fourth checkpoint.
+//
+// The slot works because `paperSpan` does not count water as ground: contact with it is a
+// loss, so a ball can no more stand on it than on the void. The slot therefore measures as
+// a neck of exactly its own width, and the derived trigger covers every line through it.
+function longsixth() {
+  var P = [], z = 40;
+  P.push(pad(0, 0, 8, 8, z));
+
+  // Opens on a TUBE — the sixth different first move in six courses, and the one place
+  // where the answer is to carry speed rather than shed it.
+  var t0 = tubeX(8, 0, 16, 8, z, 0.22, 1.1);            P.push(t0);   z = t0.exit;
+  var g1 = gateX(24, 3, 4, 3, z);                       P.push(g1);
+
+  P.push(pad(28, 0, 11, 10, z));
+  P.push(pond(28, 0, 4, 3, z, 0.45));
+  P.push(beltOver(30, 6, 9, 4, 0, 1));
+
+  var zJoin = 29.0;
+
+  // LEFT — a RIDGE straight off the belt. Seven tiles wide over open void with a crest in
+  // the middle, so every correction you make is one the crest is already making for you.
+  var lc = crownY(30, 10, 7, 22, z, 0.26, 0.55);        P.push(lc);
+  P.push(pad(30, 32, 7, 9, lc.exit));
+  var lx = rampX(37, 35, 13, 6, lc.exit, (lc.exit - zJoin) / 13);   P.push(lx);
+
+  // RIGHT — long, wide, and made of paper that goes away halfway down a chute.
+  var r1 = rampX(39, 1, 16, 8, z, 0.16);                P.push(r1);
+  P.push(pad(55, 1, 8, 8, r1.exit));
+  P.push(cut(59, 1, 4, 3));
+  var r2 = chuteY(55, 9, 8, 26, r1.exit, (r1.exit - zJoin) / 26, 1.0);   P.push(r2);
+  P.push(fragile(56, 14, 6, 10));
+
+  P.push(pad(50, 35, 16, 10, zJoin));
+  P.push(bowl(50, 38, 5, 7, zJoin, 0.35));
+  P.push(cut(56, 38, 5, 4));
+  var g2 = gateX(66, 38, 4, 3, zJoin);                  P.push(g2);
+
+  // Eighteen tiles of camber, the void on the low side.
+  var cb = bankX(70, 36, 24, 7, zJoin, 0.24, 0.85);     P.push(cb);   z = cb.exit;
+  var g3 = gateX(94, 38, 4, 3, z);                      P.push(g3);
+
+  // Sixteen tiles of ridge, the void on both.
+  var rg = crownX(98, 37, 20, 6, z, 0.22, 0.5);         P.push(rg);   z = rg.exit;
+
+  P.push(pad(118, 36, 11, 10, z));
+  P.push(pond(126, 36, 3, 3, z, 0.4));
+
+  // Twenty-four tiles to line it up, and then the band. Seven wide, not ten: this course
+  // runs its long straight legs at 7.2 tiles/s against course 5's 5.6, and a last course
+  // that is quicker than the one before it is the wrong last course.
+  var ln = rampY(119, 46, 7, 24, z, 0.20);              P.push(ln);   z = ln.exit;
+  P.push(pad(119, 70, 7, 4, z));
+  P.push(water(119, 70, 7, 4));
+  // The gate is laid over the water AFTER it, so the slot is dry paper and carries the
+  // checkpoint. Water either side is not ground, so this measures as a three-tile neck.
+  var g4 = gateY(121, 70, 3, 4, z);                     P.push(g4);
+
+  // The rival's leg. It is the only threat in the game you beat rather than avoid: ram it
+  // off the paper before it rams you, or lead it over the edge and let it do the rest.
+  var rv = rampY(119, 74, 7, 20, z, 0.22);              P.push(rv);   z = rv.exit;
+  var g5 = gateY(121, 94, 3, 4, z);                     P.push(g5);
+
+  var fin = chuteY(119, 98, 7, 14, z, 0.30, 1.0);       P.push(fin);  z = fin.exit;
+  P.push(pad(116, 116, 12, 12, z - 2.4, SURF.GREEN));
+  P.push(greenDish(118, 118, 8, 8, z - 2.4, 0.4));
+
+  return {
+    name: 'THE LONG SIXTH',
+    parTime: 30, bonus: 3,
+    pieces: P,
+    start: { x: 4, y: 4 },
+    cup: { x: 122, y: 122, r: 0.9 },
+    flags: [g1.flag, g2.flag, g3.flag, g4.flag, g5.flag],
+    routes: [
+      // 0 — LEFT: off the belt onto the ridge.
+      [{ x: 4, y: 4 }, { x: 16, y: 4 }, g1.flag, { x: 32, y: 6 }, { x: 33.5, y: 12 },
+       { x: 33.5, y: 26 }, { x: 33.5, y: 34 }, { x: 34, y: 38 }, { x: 42, y: 38 },
+       { x: 50, y: 37 }, { x: 56, y: 37 }, { x: 62, y: 37 }, { x: 66, y: 39 }, g2.flag,
+       { x: 80, y: 39.5 }, g3.flag, { x: 106, y: 40 }, { x: 118, y: 40 },
+       { x: 122, y: 43 }, { x: 122.5, y: 52 }, { x: 122.5, y: 64 }, g4.flag,
+       { x: 122.5, y: 82 }, { x: 122.5, y: 92 }, g5.flag, { x: 122.5, y: 104 },
+       { x: 122.5, y: 111 }, { x: 122, y: 118 }, { x: 122, y: 122 }],
+      // 1 — RIGHT: out along the top, then a chute that gives way under you.
+      [{ x: 4, y: 4 }, { x: 16, y: 4 }, g1.flag, { x: 34, y: 4 }, { x: 44, y: 5 },
+       { x: 54, y: 5 }, { x: 58, y: 6 }, { x: 59, y: 12 }, { x: 59, y: 28 },
+       { x: 59, y: 34 }, { x: 62, y: 36 }, { x: 65, y: 38 }, g2.flag,
+       { x: 80, y: 39.5 }, g3.flag, { x: 106, y: 40 }, { x: 118, y: 40 },
+       { x: 122, y: 43 }, { x: 122.5, y: 52 }, { x: 122.5, y: 64 }, g4.flag,
+       { x: 122.5, y: 82 }, { x: 122.5, y: 92 }, g5.flag, { x: 122.5, y: 104 },
+       { x: 122.5, y: 111 }, { x: 122, y: 118 }, { x: 122, y: 122 }],
+    ],
+    hazards: [haz('tee', 20, 6), haz('windmill', 42, 6), haz('post', 52, 36),
+              haz('golfer', 53, 42, 0, 4), haz('bench', 114, 42),
+              haz('muncher', 120, 56), haz('rival', 122, 84),
+              haz('washer', 127, 44), haz('gate', 124, 41, 0.5)],
   };
 }
 
 // The factories, in play order. Each call builds a FRESH course object: compile() fills
 // derived fields in place, so a course is never compiled twice.
-var COURSE_DEFS = [practice, ladder, bunkers, aerial];
+var COURSE_DEFS = [practice, ladder, bunkers, aerial, waterhole, longsixth];
 
 var _courseCache = [];
 function getCourse(i) {

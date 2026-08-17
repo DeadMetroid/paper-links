@@ -5,41 +5,25 @@ conversation.
 
 ## Current step
 
-**Section 16, steps 7 and 8 — the hazard roster and the other five courses.** This is the
-step section 18 is about: four of the six complaints on it are about level content, they
-were all made AFTER the level model was already correct, and three of them were made twice.
-Read section 18 and LAW 6.9 before authoring each course and again after it.
+**Section 16, steps 9-11 — the clock tests, the audio test, and the remaining validators.**
+All six courses are authored and every route clears. 32 tests still to write, and 49-52
+are expected to fail the first time they run.
 
 ## Last three things done
 
-1. Step 5: `src/render.js` — the banded sweep in WORLD bands, slab side faces where the
-   neighbour is void, the graded parallax backdrop, the cup shaft, the rotating-dimple
-   ball, the wind oscillator. Verified by capturing real frames from `file://`.
-2. Step 6: `game.js` / `ui.js` / `save.js` / `audio.js` / `main.js`. The eight states, the
-   clock read as golf, `localStorage`, the iris, the HUD. Tests 19-23 green.
-3. Built two browser harnesses against installed Chrome via `puppeteer-core` (which
-   downloads no browser of its own — the failure mode the brief warns about was avoided
-   by construction, and it worked on the first attempt):
-   - `tests/shots.js` — posed frames, hashed, PNGs to `tests/_out/`.
-   - `tests/play.js` — a live play run through real UI from `file://`.
-
-## Bugs the harnesses found that no unit test would have
-
-1. **Sprite depth keys were world-space, band keys were grid-index.** They disagreed by
-   the grid origin (-2,-2), so the ball sorted BEHIND the ground it was standing on and
-   was invisible. Found by looking at the first captured frame.
-2. **Every wall was one flat colour keyed to its own top edge**, so a wall starting near
-   the horizon stayed bright all the way to the bottom of the frame and the abyss stopped
-   reading as depth. Now one vertical gradient per surface per band — same fill count.
-3. **Arrow keys were claimed by the movement map before any menu saw them**, so no menu
-   cursor could move at all. Found by `tests/play.js`, which now navigates by ITEM NAME
-   and fails loudly if a cursor does not move.
+1. Step 8 complete: courses 2-6 authored. **All 12 routes across the six clear with zero
+   falls, and every one rates BIRDIE or PAR.**
+2. Built `tests/why.js` — where the oracle lost the ball and to what. Between it and
+   `tests/map.js` this is what made authoring five courses tractable.
+3. Fixed a real engine bug `hazardIssues` found: `hazSweep` counted a TRIGGER's field
+   radius as both its path AND its body, reporting a sprinkler as 5.52 wide when it
+   reaches 2.92, and refusing lanes it fits on comfortably.
 
 ## Next three up
 
-1. Step 7: `hazardIssues()` is already written; place the roster and run the prop sheet.
-2. Step 8: courses 2-6, one at a time, each oracle-clean on every route before the next.
-3. Step 9-11: the clock tests, audio test 35, then validators 36-39 and 44-52.
+1. Tests 24-35 (the physics rules), 36-43 (gates and the clock), 10/13/14.
+2. Tests 44-48 (render and cull), 49-52 (variety and use).
+3. Step 12 the cull pass, step 13 the docs and the FLOOR.
 
 ## Measured numbers
 
@@ -70,6 +54,31 @@ Derived, checked against the brief's stated values:
 | live play | held D for 1.2 s from the tee | ball moved 9.44 tiles, speed 8.99 |
 | LAW 12.1 check | flat / plain ramp 0.14 / camber 0.175 | shade bucket 7 / 8 / 9 — the camber does move |
 
+### The six courses, as built
+
+| # | name | flags | par | route 0 / 1 | oracle clock | net -> shots |
+|---|---|---|---|---|---|---|
+| 1 | PRACTICE GREEN | 3 | 16 | 109.5 / 107.9 | 21.8 / 21.9 | 12.8 / 12.9 -> -1 / -1 |
+| 2 | THE LADDER | 3 | 16 | 131.9 / 128.6 | 23.1 / 20.9 | 14.1 / 11.9 -> 0 / -1 |
+| 3 | THE BUNKERS | 4 | 20 | 176.8 / 172.8 | 34.2 / 28.8 | 22.2 / 16.8 -> 0 / -1 |
+| 4 | THE AERIAL | 4 | 29 | 181.7 / 173.4 | 31.5 / 32.7 | 19.5 / 23.7 -> -1 / -1 |
+| 5 | THE WATER HOLE | 5 | 18 | 191.1 / 183.2 | 34.5 / 32.4 | 19.5 / 17.4 -> 0 / 0 |
+| 6 | THE LONG SIXTH | 5 | 30 | 229.1 / 226.9 | 37.8 / 34.9 | 22.8 / 19.9 -> -1 / -1 |
+
+Every route: **zero falls**. Route length rises monotonically. Flags 3/3/4/4/5/5.
+
+### Rules measured while authoring, all now in the course comments
+
+| rule | why |
+|---|---|
+| a void gap is **at least 3 cells** | at 2, the two-ring dilation reaches across from both sides and averages the two tiers into one corner — a phantom slope of 1.05 at the landing |
+| a bunker's rim slope is `2*depth/halfwidth` and must stay **under 0.42** | past critical no input climbs out, and a bunker you cannot leave is the end of the attempt, not a cost. Nothing exceeds 0.30 |
+| a crown's steepest cross-slope is `rise*4/width`, and it lives **at the edge** | 0.8 across 5 is 0.64 and the ridge is a pair of cliffs; 0.5 across 7 is 0.29 |
+| an elbow pad goes at a ramp's **end**, never under it | a rampX's height varies along x, so a flat pad over its last cells disagrees with every corner it touches — 8 seams from one line |
+| **nothing moving sits on a narrow leg that already has a camber or water** | the leg is the threat; a chaser on top of it is two prices for one decision, and the oracle loses the ball every run |
+| a static **on** the racing line is a wall, not an obstacle | a banked chute centres the ball exactly, so it jams against an infinite mass and no input gets past |
+| a donut's hole must be somewhere you **can miss** | cut where both routes crossed, the oracle drove into it four runs out of four |
+
 ## Deviations from the build order, and why
 
 - **`src/hazards.js` was written at step 2, not step 7.** `physics.js`'s collide loop is
@@ -80,13 +89,22 @@ Derived, checked against the brief's stated values:
 
 ## Decisions taken where the brief left a choice
 
-- **THE AERIAL's tier shortcut being a wash at `bonus = 3`.** The brief names this as a
-  one-number design call and says to pick one and move on. **Decision: leave `bonus` at
-  3 on all six and make the skipped leg long enough that the shortcut is genuinely
-  faster.** Reason: `bonus` is asserted at 3 across the six by the clock spec, and
-  changing one course's bonus makes the round card's arithmetic inconsistent for no
-  gain. Lengthening the skipped leg is a course edit, which is what test 33 measures
-  anyway. Recorded here per the brief's instruction.
+- **THE AERIAL's tier shortcut being a wash at `bonus = 3`.** Decision recorded before
+  building it: leave `bonus` at 3 and lengthen the skipped leg. **Revised after
+  measuring, and this is the honest version:** two branches between the same two
+  junctions have the SAME Manhattan length whatever route they take, because every leg
+  runs `+wx` or `+wy` and nothing ever runs back — so a shortcut's saving in distance is
+  bounded by how far apart the two ENTER the rejoin, and lengthening the skipped leg
+  lengthens both. A jump additionally spends descent the later legs then cannot spend on
+  speed. Measured: the shortcut is **7 tiles shorter in course** (which is what test 33
+  asks) and **about 1.3 s slower on the clock**. Against a 3 s flag it is a wash, exactly
+  as the brief predicted. `bonus` stays 3 on all six: changing one course's would make
+  the round card's arithmetic inconsistent for a gain the geometry caps anyway.
+- **THE WATER HOLE's par is 18, not the 17 the brief names.** Measured: 191 tiles at
+  5.5 tiles/s, and a flawless run of the narrow branch nets 19.5 — BOGEY at 17, PAR at
+  18. The course was lengthened and steepened twice trying to reach 17; going further
+  meant widening the lanes, which is the one thing that course is about. Every other par
+  is the brief's number.
 - Git identity for commits is a non-personal placeholder — no real name or email in any
   committed artifact (section 0 rule 11).
 

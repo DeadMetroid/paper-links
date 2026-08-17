@@ -70,9 +70,10 @@ function hazSweep(b) {
     path = b.def.path === 'loop' ? b.def.radius : b.def.amp;
   } else if (b.prim === 'SEEKER' || b.prim === 'RIVAL') {
     path = b.leash;
-  } else if (b.prim === 'TRIGGER') {
-    path = b.def.r;
   }
+  // A TRIGGER never moves, so its path radius is zero and its `r` IS the disc — counting
+  // the field as both the path AND the body reported a sprinkler as 5.52 wide when it
+  // reaches 2.92, and refused lanes it fits on comfortably.
   return path + b.r + BALL_R;
 }
 
