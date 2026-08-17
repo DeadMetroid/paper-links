@@ -271,8 +271,10 @@ var ART = {
   },
   windmill: function (ctx, x, y, t, b) {
     // A rotor with a HUB. The first build drew three blades orbiting nothing.
-    boxIso(ctx, x, y, 1.1, 1.1, 30 * U, [238, 232, 214]);
-    coneP(ctx, x, y - 30 * U, 15 * U, 20 * U, [216, 108, 96]);
+    // The tower tapers into the cap rather than being a cube with a hat balanced on it.
+    tubeP(ctx, x, y, 13 * U, 22 * U, [238, 232, 214]);
+    tubeP(ctx, x, y - 22 * U, 9 * U, 8 * U, [226, 219, 198]);
+    coneP(ctx, x, y - 30 * U, 12 * U, 16 * U, [216, 108, 96]);
     var a = t * 1.6 + b.phase, hy = y - 34 * U;
     for (var i = 0; i < 4; i++) {
       var an = a + i * Math.PI / 2;
@@ -288,7 +290,7 @@ var ART = {
   },
   washer: function (ctx, x, y) {
     tubeP(ctx, x, y, 3 * U, 13 * U, [190, 186, 176]);
-    orb(ctx, x, y - 16 * U, 7 * U, [156, 190, 210]);
+    orb(ctx, x, y - 13 * U, 7 * U, [156, 190, 210]);    // seated ON the post, not floating
   },
   mallet: function (ctx, x, y, t, b) {
     var lean = Math.sin(b.def.omega * t + b.phase) * 0.5;
@@ -298,9 +300,12 @@ var ART = {
     ctx.restore();
   },
   cart: function (ctx, x, y) {
+    // Wheels at the BOTTOM CORNERS of the box's two camera-facing faces. Centred on the
+    // anchor they read as two dots painted on its lid; tucked wholly behind it they read
+    // as nothing at all. The prop sheet showed both in a second.
     boxIso(ctx, x, y, 1.6, 1.0, 11 * U, [212, 206, 188]);
-    orb(ctx, x - 12 * U, y - 2 * U, 5 * U, [90, 84, 78]);
-    orb(ctx, x + 12 * U, y - 2 * U, 5 * U, [90, 84, 78]);
+    orb(ctx, x + 32 * U, y + 20 * U, 7 * U, [78, 72, 68]);
+    orb(ctx, x - 2 * U, y + 30 * U, 7 * U, [78, 72, 68]);
   },
   gate: function (ctx, x, y) {
     tubeP(ctx, x, y, 2.4 * U, 24 * U, [230, 224, 208]);
@@ -356,11 +361,22 @@ var ART = {
     }
   },
   muncher: function (ctx, x, y, t, b) {
-    var mouth = b.def.r * 0.28;
+    // A RIM around the mouth, not a body over it. Drawn the other way round the housing
+    // covered the very thing that takes the ball.
+    var mouth = b.def.r * 0.28 * TILE / Math.SQRT2;
     ctx.beginPath();
-    ctx.ellipse(x, y, mouth * TILE / Math.SQRT2, mouth * TILE / (2 * Math.SQRT2), 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgb(24,20,30)'; rFill(ctx);
-    tubeP(ctx, x, y - 2 * U, 9 * U, 14 * U, [122, 116, 132]);
+    ctx.ellipse(x, y - 4 * U, mouth * 1.34, mouth * 0.72, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgb(138,132,150)'; rFill(ctx);
+    ctx.beginPath();
+    ctx.moveTo(x - mouth * 1.34, y - 4 * U);
+    ctx.lineTo(x - mouth * 1.34, y + 3 * U);
+    ctx.lineTo(x + mouth * 1.34, y + 3 * U);
+    ctx.lineTo(x + mouth * 1.34, y - 4 * U);
+    ctx.closePath();
+    ctx.fillStyle = 'rgb(96,90,108)'; rFill(ctx);
+    ctx.beginPath();
+    ctx.ellipse(x, y - 4 * U, mouth, mouth * 0.5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgb(18,15,24)'; rFill(ctx);
     // THE POINT OF NO RETURN, drawn. Inside r*(1 - K/pull) no amount of input climbs back
     // out, and a point of no return you cannot see is just an unfair death.
     var hold = muncherHold(b.def);

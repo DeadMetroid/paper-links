@@ -64,6 +64,11 @@ async function capture(opts) {
     // LOADING compiles one course per frame; wait until the menu is up.
     await page.waitForFunction('typeof APP !== "undefined" && APP.state === "MENU"',
                                { timeout: 15000 });
+    // FREEZE the simulation. The frame loop keeps running — it has to, it is the real
+    // artifact — but with stepApp neutered it redraws the same posed state forever, so a
+    // frame hash means the pose rather than however many milliseconds elapsed between
+    // posing and screenshotting.
+    await page.evaluate('window.stepApp = function () {};');
 
     var shots = [];
     for (var i = 0; i < POSES.length; i++) {
