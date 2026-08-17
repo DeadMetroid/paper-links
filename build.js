@@ -18,6 +18,12 @@ var MODULES = [
   'level.js',
   'hazards.js',
   'levels.js',
+  'audio.js',
+  'render.js',
+  'save.js',
+  'game.js',
+  'ui.js',
+  'main.js',
 ];
 
 var SRC = path.join(__dirname, 'src');
@@ -63,10 +69,13 @@ function build() {
     '<body>',
     '<canvas id="c" width="1280" height="900"></canvas>',
     '<script>',
-    '(function(){',
+    // NOT wrapped in an IIFE, deliberately. Top-level `var` in a classic script becomes a
+    // property of `window`, which is exactly how tests/load.js reads the same sources into
+    // a vm context — so the posed-frame harness drives the shipped artifact through the
+    // engine's own symbols rather than through a parallel debug surface that could drift
+    // from it. There is nothing else on this page to collide with.
     '"use strict";',
     parts.join('\n'),
-    '})();',
     '<\/script>',
     '</body>',
     '</html>',

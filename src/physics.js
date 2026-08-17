@@ -46,7 +46,12 @@ function newRun(course, routeIdx) {
   return run;
 }
 
-function emit(run, kind, a, b) { run.events.push({ kind: kind, a: a, b: b }); }
+// The audio layer drains this every frame. A headless driver never does, so the list is
+// capped rather than left to grow through a hundred thousand ticks.
+function emit(run, kind, a, b) {
+  if (run.events.length > 128) run.events.shift();
+  run.events.push({ kind: kind, a: a, b: b });
+}
 
 function clampSpeed(b) {
   var s2 = b.vx * b.vx + b.vy * b.vy;

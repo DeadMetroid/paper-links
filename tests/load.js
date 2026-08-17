@@ -31,6 +31,25 @@ function applyMutations(file, src) {
   return src;
 }
 
+// localStorage works on file:// and survives a full browser restart; this is the same
+// contract in memory, so test 23 exercises the real save code rather than a parallel one.
+function makeWindow() {
+  var store = {};
+  return {
+    localStorage: {
+      getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; },
+      setItem: function (k, v) { store[k] = String(v); },
+      removeItem: function (k) { delete store[k]; },
+      clear: function () { store = {}; },
+      _raw: function () { return store; },
+      _poison: function (k, v) { store[k] = v; },
+    },
+    addEventListener: function () {},
+    requestAnimationFrame: function () {},
+    performance: { now: function () { return 0; } },
+  };
+}
+
 function loadEngine() {
   var ctx = vm.createContext({
     Math: Math, JSON: JSON, Object: Object, Array: Array, Number: Number,
@@ -39,6 +58,10 @@ function loadEngine() {
     Float64Array: Float64Array, Float32Array: Float32Array,
     Uint8Array: Uint8Array, Int32Array: Int32Array, Uint32Array: Uint32Array,
     console: console,
+    // A `window` with a working localStorage, and NO `document` — so main.js's boot guard
+    // is false and nothing in the suite ever starts a frame loop. Everything above main.js
+    // runs headlessly, which is the whole point of keeping the simulation separable.
+    window: makeWindow(),
   });
   ctx.globalThis = ctx;
   MODULES.forEach(function (f) {

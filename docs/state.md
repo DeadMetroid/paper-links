@@ -5,32 +5,41 @@ conversation.
 
 ## Current step
 
-**Section 16, step 5 — `src/render.js`.** The banded sweep, slab sides, the parallax
-void, the cup shaft. After it: a playable game.
+**Section 16, steps 7 and 8 — the hazard roster and the other five courses.** This is the
+step section 18 is about: four of the six complaints on it are about level content, they
+were all made AFTER the level model was already correct, and three of them were made twice.
+Read section 18 and LAW 6.9 before authoring each course and again after it.
 
 ## Last three things done
 
-1. Step 3: `src/level.js` — the piece compiler, the perimeter-only seam check, the
-   two-ring dilation, `paperSpan`/`gateAt`, routes. Tests 1-9 green.
-2. Step 4: `src/levels.js` with PRACTICE GREEN verbatim, and the oracle wired.
-   **Both authored routes cleared, zero falls, first attempt.** Tests 11, 12 green.
-3. Mutation harness now at 17 mutations, every one reddening exactly what it declares.
-   Two of them found real weaknesses in the TESTS, both fixed in the test:
-   - test 2 sampled only cell centres, and `gradAt` at a cell centre reads that cell's
-     own two corner lines and nothing else — so it could not see the dilation being
-     removed at all. It now samples nine points per cell.
-   - test 2's "declared" bound compared a 1-D corner step against a 2-D gradient
-     magnitude. Each piece is now compiled ALONE through the same compiler and read
-     with the same sweep.
-   - test 8's branch signature recorded the SET of widths along the divergence, which
-     includes the junction both branches leave by, so two identical lanes looked
-     different. It now records the narrowest point.
+1. Step 5: `src/render.js` — the banded sweep in WORLD bands, slab side faces where the
+   neighbour is void, the graded parallax backdrop, the cup shaft, the rotating-dimple
+   ball, the wind oscillator. Verified by capturing real frames from `file://`.
+2. Step 6: `game.js` / `ui.js` / `save.js` / `audio.js` / `main.js`. The eight states, the
+   clock read as golf, `localStorage`, the iris, the HUD. Tests 19-23 green.
+3. Built two browser harnesses against installed Chrome via `puppeteer-core` (which
+   downloads no browser of its own — the failure mode the brief warns about was avoided
+   by construction, and it worked on the first attempt):
+   - `tests/shots.js` — posed frames, hashed, PNGs to `tests/_out/`.
+   - `tests/play.js` — a live play run through real UI from `file://`.
+
+## Bugs the harnesses found that no unit test would have
+
+1. **Sprite depth keys were world-space, band keys were grid-index.** They disagreed by
+   the grid origin (-2,-2), so the ball sorted BEHIND the ground it was standing on and
+   was invisible. Found by looking at the first captured frame.
+2. **Every wall was one flat colour keyed to its own top edge**, so a wall starting near
+   the horizon stayed bright all the way to the bottom of the frame and the abyss stopped
+   reading as depth. Now one vertical gradient per surface per band — same fill count.
+3. **Arrow keys were claimed by the movement map before any menu saw them**, so no menu
+   cursor could move at all. Found by `tests/play.js`, which now navigates by ITEM NAME
+   and fails loudly if a cursor does not move.
 
 ## Next three up
 
-1. Step 5: `src/render.js` + `main.js`. Verify by loading `game.html` from `file://`.
-2. Step 6: `game.js`, `ui.js`, `save.js`. Tests 22, 23.
-3. Step 7/8: the hazard roster and the other five courses.
+1. Step 7: `hazardIssues()` is already written; place the roster and run the prop sheet.
+2. Step 8: courses 2-6, one at a time, each oracle-clean on every route before the next.
+3. Step 9-11: the clock tests, audio test 35, then validators 36-39 and 44-52.
 
 ## Measured numbers
 
@@ -55,6 +64,11 @@ Derived, checked against the brief's stated values:
 | course 1 rest ratio | LAW 6.7 | 1.0% (target under 7%) |
 | oracle, course 1 | route 0 / route 1 | cleared, 0 falls, clock 21.8 / 21.9, credit 9 |
 | course 1 net time | clock - credit vs parTime 16, bandStep 4 | 12.8 -> -1 shot = BIRDIE |
+| frame cost, posed | course 1, five poses, recording canvas | 151 fills, 79 strokes |
+| frame cost, live | course 1 in the browser, ball moving | 192 fills, 97 strokes |
+| build-01's worst frame, for scale | from the brief | 681 fills, 571 strokes (275/192 painting nothing) |
+| live play | held D for 1.2 s from the tee | ball moved 9.44 tiles, speed 8.99 |
+| LAW 12.1 check | flat / plain ramp 0.14 / camber 0.175 | shade bucket 7 / 8 / 9 — the camber does move |
 
 ## Deviations from the build order, and why
 
@@ -78,5 +92,10 @@ Derived, checked against the brief's stated values:
 
 ## Gaps / known unresolved
 
-- Headless browser not yet attempted. Two attempts allowed; on failure the posed-frame
-  harness (section 15, harness 2) is dropped and that fact is recorded here.
+- **Headless browser: resolved, first attempt.** `puppeteer-core` (no bundled download)
+  against `C:\Program Files\Google\Chrome\Application\chrome.exe` with
+  `--allow-file-access-from-files`. Both harnesses work. No fallback needed.
+- `game.html` is deliberately NOT wrapped in an IIFE: top-level `var` in a classic script
+  becomes a `window` property, which is how `tests/load.js` reads the same sources into a
+  vm context. The posed-frame harness therefore drives the shipped artifact through the
+  engine's own symbols rather than a parallel debug surface that could drift from it.
