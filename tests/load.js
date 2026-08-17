@@ -13,6 +13,24 @@ var MODULES = require('../build.js').MODULES;
 
 var SRC = path.join(__dirname, '..', 'src');
 
+// A test a mutation cannot turn red is not a test. PL_MUTATE carries a JSON list of
+// { file, from, to } edits applied to the source text before it is loaded, so
+// tests/mutate.js can break the code on purpose and watch exactly one test go red.
+function mutations() {
+  if (!process.env.PL_MUTATE) return [];
+  return JSON.parse(process.env.PL_MUTATE);
+}
+
+function applyMutations(file, src) {
+  mutations().forEach(function (m) {
+    if (m.file !== file) return;
+    if (src.indexOf(m.from) === -1)
+      throw new Error('mutation target not found in src/' + file + ': ' + m.from);
+    src = src.split(m.from).join(m.to);
+  });
+  return src;
+}
+
 function loadEngine() {
   var ctx = vm.createContext({
     Math: Math, JSON: JSON, Object: Object, Array: Array, Number: Number,
@@ -24,7 +42,7 @@ function loadEngine() {
   });
   ctx.globalThis = ctx;
   MODULES.forEach(function (f) {
-    var src = fs.readFileSync(path.join(SRC, f), 'utf8');
+    var src = applyMutations(f, fs.readFileSync(path.join(SRC, f), 'utf8'));
     vm.runInContext(src, ctx, { filename: 'src/' + f });
   });
   return ctx;

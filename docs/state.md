@@ -5,24 +5,26 @@ conversation.
 
 ## Current step
 
-**Section 16, step 1 — law to disk.** In progress.
+**Section 16, step 3 — `src/level.js`, the piece compiler.** Tests 1–7 next.
 
 ## Last three things done
 
-1. Surveyed the directory: `docs/FLOOR.md`, `.claude/settings.json`,
-   `.claude/hooks/floor-gate.ps1` are the human-authored entry files. Nothing else here.
-2. `git init`.
-3. Wrote `CLAUDE.md` (section 0, 2, 3, 4 verbatim + LAWS digest + complaint log),
-   `docs/spec.md` (sections 5–14).
+1. Step 1 complete and committed: `CLAUDE.md`, `docs/spec.md`, `docs/state.md`,
+   `README.md`, `ASSETS.md`, `docs/VIDEO_GUIDE.md`, `build.js`, the 52-test manifest,
+   the oracle verbatim.
+2. Step 2 complete: `src/tuning.js`, `src/heightfield.js`, `src/physics.js`,
+   `src/hazards.js`. Tests 15–18 green. 100,000 ticks with no NaN and no clamp breach.
+3. Built `tests/mutate.js` — a reusable mutation harness. 9 mutations, every one
+   reddens exactly the tests it declares. Two of them found test 17 was too narrow
+   (it only traced the ball) and the TEST was fixed, not the mutation.
 
 ## Next three up
 
-1. Finish step 1: `README.md`, `ASSETS.md`, `docs/VIDEO_GUIDE.md`, the oracle verbatim
-   to `tests/oracle.js`, the 52-test manifest to `tests/run.js`. First commit.
-2. Step 2: `src/tuning.js`, `src/heightfield.js`, `src/physics.js` + headless harness.
-   Tests 15–18. Prove 100,000 ticks without a NaN.
-3. Step 3: `src/level.js` — piece compiler, two-ring dilation, seam report,
-   reachability, routes. Tests 1–7.
+1. Step 3: `src/level.js` — piece compiler, two-ring dilation, seam report,
+   reachability, routes, the validators. Tests 1–7.
+2. Step 4: `src/levels.js` with PRACTICE GREEN verbatim + wire the oracle.
+   Tests 11 and 12 green on course 1 alone.
+3. Step 5: `src/render.js` — banded sweep, slab sides, parallax void, cup shaft.
 
 ## Measured numbers
 
@@ -34,8 +36,18 @@ Derived, checked against the brief's stated values:
 | `TILE` | `floor(H·(1−BALL_Y) / ((√2/4)·MAX_SPEED·1.2))` = `floor(558 / 11.031)` | `50` |
 | `Z_SCALE` | `round(TILE·0.36)` = `round(18)` | `18` |
 | `Z_BAND` | `(TILE/2)/Z_SCALE` = `25/18` | `1.3889` |
-| belt terminal | `BELT_SPEED·BELT_ACC / (BELT_ACC + MU·BELT_SPEED)` — see step 2 | target 8.8 u/s in ~0.6 s |
 | drag time constant | `1/MU` = `1/0.32` | `3.125 s` |
+| ballistics (test 15) | launch off a flat lip, 50 airborne ticks | x linear to 1e-9, z = semi-implicit parabola to 1e-9 |
+| clamp (test 18) | 100,000 ticks down a 0.9 slope with a belt and full input | peak speed 26.000000, no NaN |
+| determinism (test 17) | two runs, ball + every body traced every 7 ticks, 20 s | byte-identical |
+
+## Deviations from the build order, and why
+
+- **`src/hazards.js` was written at step 2, not step 7.** `physics.js`'s collide loop is
+  the two-body impulse of LAW 5.5, and the bodies it collides against are hazards, so
+  writing physics without them leaves either a stub that ships or a duplicate definition
+  that shadows itself. Nothing is *placed* early — `hazardIssues()` and the roster still
+  come at step 7/8, which is where the risk actually was. Recorded per section 0 rule 1.
 
 ## Decisions taken where the brief left a choice
 
