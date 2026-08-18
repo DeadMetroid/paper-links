@@ -21,13 +21,22 @@ var ROOT = path.join(__dirname, '..');
 var OUT = path.join(__dirname, '_out');
 var HASHES = path.join(__dirname, 'frames.json');
 
+// Set PL_BROWSER to point these harnesses at any Chromium build. The list below is only
+// the default install locations to try when it is not set: they are the same on every
+// machine and identify nothing about this one, and they are the only absolute paths
+// written down anywhere in this repository.
 var BROWSERS = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+  '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ];
 
 function findBrowser() {
+  if (process.env.PL_BROWSER && fs.existsSync(process.env.PL_BROWSER)) return process.env.PL_BROWSER;
   for (var i = 0; i < BROWSERS.length; i++) if (fs.existsSync(BROWSERS[i])) return BROWSERS[i];
   return null;
 }
