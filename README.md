@@ -20,7 +20,7 @@ reached is the respawn. **Nothing in the game can end a course except the cup.**
 **Double-click `game.html`.** That is the whole install.
 
 It runs from `file://` with no server, no build step and no dependencies — one
-self-contained HTML file, Canvas 2D and vanilla JS, 149 KB.
+self-contained HTML file, Canvas 2D and vanilla JS, 150 KB.
 
 ## RUN THE TESTS
 
