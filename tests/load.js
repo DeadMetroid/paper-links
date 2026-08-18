@@ -71,6 +71,15 @@ function loadEngine() {
   return ctx;
 }
 
+// The SHIPPED ARTIFACT, read the way tests 20 and 21 read it — and through the same
+// mutation hook, so `game.html` can be broken on purpose too. Those two tests are the only
+// ones that read a built file rather than the sources, and without this they would be the
+// only two nothing could falsify.
+function readArtifact() {
+  return applyMutations('game.html',
+    fs.readFileSync(path.join(__dirname, '..', 'game.html'), 'utf8'));
+}
+
 // Reads the source text exactly as build.js concatenates it, for hashing (test 20).
 function engineSource() {
   return MODULES.map(function (f) {
@@ -78,4 +87,14 @@ function engineSource() {
   }).join('\n');
 }
 
-module.exports = { loadEngine: loadEngine, engineSource: engineSource, MODULES: MODULES };
+// The sources as TEXT, through the mutation hook — for test 14, which READS the code
+// rather than running it. Without the hook it reads files the mutation harness never
+// touched, and nothing can falsify it.
+function sourceText() {
+  return MODULES.map(function (f) {
+    return applyMutations(f, fs.readFileSync(path.join(SRC, f), 'utf8'));
+  }).join('\n');
+}
+
+module.exports = { loadEngine: loadEngine, engineSource: engineSource,
+                   readArtifact: readArtifact, sourceText: sourceText, MODULES: MODULES };

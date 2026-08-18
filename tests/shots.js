@@ -40,6 +40,23 @@ var POSES = [
   { c: 0, s: 0.45, name: 'c1-branch' },
   { c: 0, s: 0.72, name: 'c1-rejoin' },
   { c: 0, s: 0.95, name: 'c1-tier' },
+  { c: 1, s: 0.18, name: 'c2-split' },
+  { c: 1, s: 0.34, name: 'c2-fragile' },
+  { c: 1, s: 0.72, name: 'c2-camber' },
+  { c: 2, s: 0.16, name: 'c3-bunkerA' },
+  { c: 2, s: 0.30, name: 'c3-dryline' },
+  { c: 2, s: 0.62, name: 'c3-ridge' },
+  { c: 2, s: 0.80, name: 'c3-funnel' },
+  { c: 3, s: 0.28, name: 'c4-catwalk' },
+  { c: 3, s: 0.56, name: 'c4-shortcut', route: 1 },
+  { c: 3, s: 0.90, name: 'c4-tube' },
+  { c: 4, s: 0.20, name: 'c5-channel' },
+  { c: 4, s: 0.62, name: 'c5-midwater' },
+  { c: 4, s: 0.95, name: 'c5-runin' },
+  { c: 5, s: 0.12, name: 'c6-ridge' },
+  { c: 5, s: 0.55, name: 'c6-camber' },
+  { c: 5, s: 0.72, name: 'c6-watergate' },
+  { c: 5, s: 0.82, name: 'c6-rival' },
 ];
 
 async function capture(opts) {
@@ -77,7 +94,7 @@ async function capture(opts) {
       await page.evaluate(function (pose) {
         startCourse(pose.c);
         APP.iris = null;
-        var run = APP.run, r = run.course.routes[0];
+        var run = APP.run, r = run.course.routes[pose.route || 0];
         var pt = pointAt(r, r.total * pose.s);
         run.ball.x = pt.x; run.ball.y = pt.y;
         run.ball.z = heightAt(run.grid, pt.x, pt.y);

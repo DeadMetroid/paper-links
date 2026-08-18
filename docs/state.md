@@ -10,13 +10,21 @@ All 52 tests are green. The cull pass (step 12) is done and its outcome is recor
 
 ## Last three things done
 
-1. Steps 9-11: tests 24-52 written. **52/52 green.**
-2. Step 12, the cull pass. Cross-band batching of terrain tops cut the worst frame from
-   524 fills to 461. Every attempt to cull terrain quads and wall quads on top of that
-   MOVED PIXELS in the posed frames and was dropped — see below. The flag cull stayed
-   because it is byte-identical.
-3. Tests 45, 46, 50, 51 all failed the first time they ran, exactly as the brief predicted
-   for the variety tests, and three of them were real defects rather than bad tests.
+1. **52/52 tests green.**
+2. **56 mutations, 0 inadequate, and all 52 tests falsified ON PURPOSE** — `node tests/mutate.js`
+   now reports that tally itself, because "every test falsified at least once" is a claim
+   somebody has to keep true rather than remember.
+3. Built `tests/walk.js`: drives the shipped `game.html` from `file://` through the whole
+   of `docs/VIDEO_GUIDE.md`, capturing a frame per beat. Sixteen beats, zero console errors.
+
+## What the mutation pass found — four tests that were not tests
+
+| test | it stayed green under a mutation that should have killed it |
+|---|---|
+| 27 | it read the rival's velocity AFTER the collision, which is what the rival CHASED with. Deleting the impulse entirely changed nothing it looked at. It now reads `kx/ky` in the tick the collision banks them. |
+| 31 | it drove the ball off the high lip the other way, so the ball never came back to the tier's footprint and the assertion never ran. And once a broken build snapped the ball ONTO the tier, the "while it is below the tier" gate stopped it being checked at all. It now asserts the ball never ROSE. |
+| 14 | it read `src/*.js` straight off disk, so the mutation harness — which patches the text as it loads — could not reach it. Adding a `GAMEOVER` state left it green. |
+| 20, 21 | same, for `game.html`. All three now read through `tests/load.js`, which applies the mutations. |
 
 ## What the last four tests found
 

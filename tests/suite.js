@@ -334,7 +334,7 @@ test(19, 'a course is the same every time it is built', function () {
 test(20, 'game.html builds the same six courses as src/', function () {
   // The deliverable is a committed file. If it ever drifts from the sources, the thing
   // the judge opens is not the thing the suite tested.
-  var html = fs.readFileSync(path.join(ROOT, 'game.html'), 'utf8');
+  var html = LOAD.readArtifact();
   LOAD.MODULES.forEach(function (m) {
     ok(html.indexOf('/* ===== src/' + m + ' ===== */') !== -1, 'game.html is missing src/' + m);
   });
@@ -366,7 +366,7 @@ test(20, 'game.html builds the same six courses as src/', function () {
 });
 
 test(21, 'the artifact reaches outside itself for nothing', function () {
-  var html = fs.readFileSync(path.join(ROOT, 'game.html'), 'utf8');
+  var html = LOAD.readArtifact();
   // No URL, no fetch, no asset. Every visual is Canvas 2D and every sound is synthesized;
   // ASSETS.md says "all procedural, none third-party" and this is what keeps that true.
   // file:// blocks fetch/XHR against local files anyway — reaching for one would be
@@ -616,23 +616,30 @@ test(27, 'the rival is a two-body collision, both ways', function () {
   // The BALL takes momentum off the rival...
   var run = PL.newRun(build());
   var riv = run.bodies[0];
-  riv.engaged = false;
   run.ball.x = 17; run.ball.vx = 18;
-  var got = null;
-  for (var i = 0; i < 120 * 3 && !got; i++) {
+  var got = null, banked = 0, ballAfter = 0;
+  for (var i = 0; i < 120 * 3 && got === null; i++) {
     PL.tick(run, 0, 0);
     for (var e = 0; e < run.events.length; e++)
-      if (run.events[e].kind === 'knock') got = run.events[e].a;
+      if (run.events[e].kind === 'knock') {
+        got = run.events[e].a;
+        // The impulse the collision BANKED on the rival, read in the same tick it was
+        // banked. Reading the rival's velocity later measures what it chased with, not
+        // what it was handed — which is how this test first passed against a build where
+        // the collision gave it nothing at all.
+        banked = Math.hypot(riv.kx, riv.ky);
+        ballAfter = run.ball.vx;
+      }
     run.events.length = 0;
   }
   ok(got !== null, 'the ball never met the rival');
   gte(got, 4, 'the impulse was recorded at a speed the collision cannot have had');
-  lte(run.ball.vx, 18, 'the ball came out of the collision faster than it went in');
-
-  // ...and the rival is MOVED by it. Physics never integrates a hazard's motion — it hands
-  // it a number, and the hazard spends it at the top of its own update.
-  gte(Math.abs(riv.vx) + Math.abs(riv.kx), 1.0,
-      'an infinite mass: the rival took nothing back from the collision');
+  lte(ballAfter, 18, 'the ball came out of the collision faster than it went in');
+  gte(banked, 1.0, 'an infinite mass: the collision handed the rival nothing. ' +
+      'J = -(1+E)*rel*m/(m+1) and the body takes -J/m — that branch IS the rival marble');
+  // ...and physics never INTEGRATES a hazard's motion: it only ever hands it a number,
+  // which the hazard spends at the top of its own update.
+  gte(Math.abs(riv.vx) + Math.abs(riv.vy), 0.5, 'the rival never spent what it was handed');
 
   // A world body with no mass takes nothing back, which is the other half of the branch.
   var c2 = build();
@@ -735,13 +742,18 @@ test(30, 'a respawn holds the ball for RESPAWN_HOLD seconds', function () {
   c.hazards = [{ name: 'cart', x: 6.5, y: 2, phase: 0 }];
   var run = PL.newRun(c);
   run.ball.vx = 12;
-  while (run.falls === 0) PL.tick(run, 0, 0);
+  // Every wait in this suite is bounded. An unbounded one is fine until a mutation makes
+  // the thing it waits for never happen, and then tests/mutate.js hangs instead of
+  // reporting — which is exactly what it did the first time it was run against all 52.
+  var guard = 0;
+  while (run.falls === 0 && guard++ < 120 * 30) PL.tick(run, 0, 0);
+  eq(run.falls, 1, 'the ball was never lost, so there was no respawn to time');
   near(run.holdT, PL.RESPAWN_HOLD, PL.DT * 1.01, 'the hold is not RESPAWN_HOLD long');
 
   var held = 0, moved = 0, cartMoved = 0;
   var cart = run.bodies[0];
   var cx0 = cart.x, cy0 = cart.y;
-  while (run.holdT > 0) {
+  while (run.holdT > 0 && held < 120 * 10) {
     PL.tick(run, 1, 1);                        // full input, ignored
     held++;
     if (Math.abs(run.ball.x - 6.5) > 1e-9 || Math.abs(run.ball.y - 4.5) > 1e-9) moved++;
@@ -762,26 +774,35 @@ test(31, 'a ball falling past a tier is not snapped onto the top of it', functio
   // it just fell off.
   var HI = 40, LO = 20;
   var g = F.slab(PL, 30, 9, function (i) { return i <= 10 ? HI : LO; });
-  var c = F.shell(PL, g, { x: 5.5, y: 4.5 });
+  var c = F.shell(PL, g, { x: 16, y: 4.5 });
   c.deathZ = LO - PL.DEATH_DROP;
   var run = PL.newRun(c);
-  run.ball.vx = 16;
-  var worst = -Infinity, sawBelow = false;
-  for (var i = 0; i < 120 * 6; i++) {
+  // Airborne beside the cliff, BETWEEN the two tiers, and travelling straight into it.
+  // Driving off the high lip the other way never comes back, so it tests nothing — which
+  // is how this first passed against a build with the tier wall deleted outright.
+  var b = run.ball;
+  b.x = 13; b.z = LO + 8; b.vx = -20; b.air = true; b.vz = 0;
+  // The ball starts at LO+8 and nothing in this scene can lift it: gravity only pulls, and
+  // the wall rule only reflects it HORIZONTALLY. So "it never rose" is the whole assertion,
+  // and it catches the snap directly. Gating on "while it is below the tier" does not: the
+  // moment the ball is wrongly snapped onto the tier's top it stops being below it, and
+  // the check quietly stops running — which is how this test first passed against a build
+  // with the tier wall deleted outright.
+  var start = b.z, reached = 99, ticks = 0;
+  for (var i = 0; i < 120 * 4; i++) {
     PL.tick(run, 0, 0);
-    var b = run.ball;
     if (b.state !== PL.ST.ROLL) break;
-    if (b.x < 10 && b.z < HI - 2) {
-      // Inside the high tier's footprint and below its surface: it must NEVER be pulled up.
-      sawBelow = true;
-      if (b.z > worst) worst = b.z;
-      lte(b.z, HI - 1.5, 'a ball below the high tier was snapped back onto its top at x=' +
-          b.x.toFixed(2) + ' z=' + b.z.toFixed(2));
-    }
+    ticks++;
+    if (b.x < reached) reached = b.x;
+    lte(b.z, start + 1e-9, 'the ball ROSE, from ' + start.toFixed(2) + ' to ' +
+        b.z.toFixed(2) + ' at x=' + b.x.toFixed(2) + ' — it was snapped onto the top of a ' +
+        'tier it was falling past');
+    // ...and it may not walk into the cliff face either.
+    gte(b.x, 10 - 2 * PL.BALL_R - 0.05, 'the ball drove ' + (10 - b.x).toFixed(2) +
+        ' tiles into the face of the tier at z=' + b.z.toFixed(2));
   }
-  ok(run.ball.z < HI - 2 || run.ball.x > 10,
-     'the ball never got below the high tier at all, so nothing was tested');
-  void sawBelow; void worst;
+  gte(ticks, 30, 'the ball never spent time beside the cliff, so nothing was tested');
+  lte(reached, 11.5, 'the ball never actually reached the cliff face');
 });
 
 test(44, 'a falling ball is still stopped by the paper, not carried through it', function () {
@@ -977,10 +998,10 @@ test(14, 'nothing but the cup can end a course', function () {
   // Any quantity that can reach zero and stop the player is the life system this design
   // already cut. The first build reinvented it twice — as a stroke limit, then as a
   // countdown clock — and carried an unreachable game-over state for six iterations.
-  var fs2 = require('fs'), path2 = require('path');
-  var raw = LOAD.MODULES.map(function (m) {
-    return fs2.readFileSync(path2.join(ROOT, 'src', m), 'utf8');
-  }).join('\n');
+  // Read through the loader, not straight off disk: this is the one test that reads the
+  // CODE rather than running it, and reading a file the mutation harness never touched is
+  // how it became the one test nothing could falsify.
+  var raw = LOAD.sourceText();
   // Comments stripped: this test is about what the CODE does. "EVERY NUMBER IN THE GAME
   // LIVES HERE" is a sentence, not a life system, and a scan that cannot tell the
   // difference is a scan nobody will keep.
@@ -1025,7 +1046,8 @@ test(14, 'nothing but the cup can end a course', function () {
     var was = run.falls;
     while (run.falls === was && guard++ < 120 * 20) PL.tick(run, 0, 0);
     eq(run.falls, was + 1, 'the ball could not be lost on attempt ' + i);
-    while (run.holdT > 0) PL.tick(run, 0, 0);
+    var g2 = 0;
+    while (run.holdT > 0 && g2++ < 120 * 10) PL.tick(run, 0, 0);
     eq(run.ball.state, PL.ST.ROLL, 'after ' + (i + 1) + ' losses the ball did not come back');
   }
   eq(run.falls, 50, 'fifty losses were not all counted');

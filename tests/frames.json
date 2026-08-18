@@ -3,5 +3,22 @@
   "c1-gate1": "c5524310122f3679",
   "c1-branch": "d460529deb57aefb",
   "c1-rejoin": "ab7c28d0bbb6a712",
-  "c1-tier": "2ffac1c1d1ce6c63"
+  "c1-tier": "2ffac1c1d1ce6c63",
+  "c2-split": "78d2c126d26c75cf",
+  "c2-fragile": "6c17bfde46ed1296",
+  "c2-camber": "2fa356f2e9c0d9ef",
+  "c3-bunkerA": "1506cfa8cdc2f53a",
+  "c3-dryline": "2fd6647e196088c3",
+  "c3-ridge": "cc019a968c0a05a6",
+  "c3-funnel": "e8e0b44e42a98a47",
+  "c4-catwalk": "239552e99d200cc2",
+  "c4-shortcut": "54af5e4ec75df160",
+  "c4-tube": "b0fe8b7d6571f8e5",
+  "c5-channel": "a8fbcc002b1a6c65",
+  "c5-midwater": "4f963c08a80d2104",
+  "c5-runin": "27494725a69f0f90",
+  "c6-ridge": "71ebe4b06d7f1b14",
+  "c6-camber": "dce210527bc6d3a8",
+  "c6-watergate": "b7d412b450c76e5b",
+  "c6-rival": "d510e76086d8ab04"
 }
