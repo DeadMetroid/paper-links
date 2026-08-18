@@ -1,5 +1,7 @@
 # PAPER LINKS
 
+
+
 An isometric momentum game in the lineage of *Marble Madness*, themed as a papercraft
 miniature golf course. You are the ball. Six authored courses descend toward the camera
 down narrow slabs of folded paper suspended over an abyss.
@@ -14,7 +16,7 @@ There are no lives, no strokes, and no budget of any kind. Checkpoint-only: the 
 reached is the respawn. **Nothing in the game can end a course except the cup.**
 
 ---
-
+**Gameplay video (one unbroken take):** https://youtu.be/87RNzYdan48?si=EfRf_0CxxyG0Tj5I
 ## RUN IT
 
 **Double-click `game.html`.** That is the whole install.
