@@ -23,6 +23,31 @@ the running game, the disclosure check read off `git ls-files`.
    no course placed it, so THE LONG SIXTH's rival leg is a washboard: three whole waves, so
    the term is zero at both ends and nothing downstream of it moved.
 
+## Section 18, read again after step 13 — the one complaint still live
+
+Re-reading the complaint log after finishing, one of its causes was still true of this
+build. *"the ramps are just completely flat and look no different than anything else"* was
+caused by **every slope in the game being below SLOPE_CRIT**, and the six courses' steepest
+authored legs read 0.20 / 0.30 / 0.40 / 0.25 / 0.34 / 0.30 against a critical of 0.42. Test
+13 passed the whole time — but on a funnel wall, which is decoration, and the brief's own
+slope vocabulary reserves 0.50+ for "a chute: you survive it, you do not steer it" and no
+course had one.
+
+THE LONG SIXTH now closes on a chute at **0.52**. Gravity beats every unit of input the
+player has, the ball goes to the clamp whatever anyone does, and the only thing keeping it
+on the paper is the chute's own rim. The jump at the end of it went from four tiles and 2.4
+down to three and 3.2, because at the first numbers it wanted 15 units/s and the run-in
+could not always deliver it. The ladder now reads **0.20 · 0.30 · 0.40 · 0.25 · 0.34 ·
+0.52**, and every route still clears with zero falls.
+
+The other twelve complaints were checked against what is on screen, not against the code:
+walls and a graded backdrop (`c1-tee.png`), props as volumes (`props.png`), sand and water
+as sunk bowls (`c3-dryline.png`, `c5-channel.png`), catwalks four to eight wide over open
+void, the cup as a shaft with its near lip cutting the ball (`walk-6-cup.png`), K 9 / MU
+0.32, no budget that can reach zero (test 14), rest ratios 0.5–1.1%, all 24 checkpoints on
+three-tile necks with 23+ tiles left to the cup, a clock that counts up, tests 31/44/45 for
+the ball through the edges, and 461 fills a frame against the first build's 681.
+
 ## Disclosure
 
 `git ls-files` lists 41 files including `CLAUDE.md`, `game.html`, `build.js`, `README.md`,

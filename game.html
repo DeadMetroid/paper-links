@@ -1764,16 +1764,23 @@ function longsixth() {
   var rv = waveY(119, 74, 7, 20, z, 0.22, 0.35, 3);     P.push(rv);   z = rv.exit;
   var g5 = gateY(121, 94, 3, 4, z);                     P.push(g5);
 
-  var fin = chuteY(119, 98, 7, 14, z, 0.30, 1.0);       P.push(fin);  z = fin.exit;
-  P.push(pad(116, 116, 12, 12, z - 2.4, SURF.GREEN));
-  P.push(greenDish(118, 118, 8, 8, z - 2.4, 0.4));
+  // The one leg in the game that is PAST CRITICAL. SLOPE_CRIT is K/(ROLL*G) = 0.42, and
+  // this is 0.52: gravity beats every unit of input the player has, the ball goes to the
+  // clamp whatever anyone does, and the only thing keeping it on the paper is the chute's
+  // own rim. You survive it; you do not steer it. It is the last leg of the last course
+  // because that is where the game gets to stop asking.
+  var fin = chuteY(119, 98, 7, 14, z, 0.52, 1.0);       P.push(fin);  z = fin.exit;
+  // Three tiles of void and 3.2 down, off a chute that is already at the clamp. At four
+  // tiles and 2.4 the jump wanted 15 units/s and the run-in could not always deliver it.
+  P.push(pad(116, 115, 12, 12, z - 3.2, SURF.GREEN));
+  P.push(greenDish(118, 117, 8, 8, z - 3.2, 0.4));
 
   return {
     name: 'THE LONG SIXTH',
     parTime: 30, bonus: 3,
     pieces: P,
     start: { x: 4, y: 4 },
-    cup: { x: 122, y: 122, r: 0.9 },
+    cup: { x: 122, y: 121, r: 0.9 },
     flags: [g1.flag, g2.flag, g3.flag, g4.flag, g5.flag],
     routes: [
       // 0 — LEFT: off the belt onto the ridge.
@@ -1783,7 +1790,7 @@ function longsixth() {
        { x: 80, y: 39.5 }, g3.flag, { x: 106, y: 40 }, { x: 118, y: 40 },
        { x: 122, y: 43 }, { x: 122.5, y: 52 }, { x: 122.5, y: 64 }, g4.flag,
        { x: 122.5, y: 82 }, { x: 122.5, y: 92 }, g5.flag, { x: 122.5, y: 104 },
-       { x: 122.5, y: 111 }, { x: 122, y: 118 }, { x: 122, y: 122 }],
+       { x: 122.5, y: 111 }, { x: 122, y: 117 }, { x: 122, y: 121 }],
       // 1 — RIGHT: out along the top, then a chute that gives way under you.
       [{ x: 4, y: 4 }, { x: 16, y: 4 }, g1.flag, { x: 34, y: 4 }, { x: 44, y: 5 },
        { x: 54, y: 5 }, { x: 58, y: 6 }, { x: 59, y: 12 }, { x: 59, y: 28 },
@@ -1791,7 +1798,7 @@ function longsixth() {
        { x: 80, y: 39.5 }, g3.flag, { x: 106, y: 40 }, { x: 118, y: 40 },
        { x: 122, y: 43 }, { x: 122.5, y: 52 }, { x: 122.5, y: 64 }, g4.flag,
        { x: 122.5, y: 82 }, { x: 122.5, y: 92 }, g5.flag, { x: 122.5, y: 104 },
-       { x: 122.5, y: 111 }, { x: 122, y: 118 }, { x: 122, y: 122 }],
+       { x: 122.5, y: 111 }, { x: 122, y: 117 }, { x: 122, y: 121 }],
     ],
     hazards: [haz('tee', 20, 6), haz('windmill', 42, 6), haz('post', 52, 36),
               haz('golfer', 53, 42, 0, 4), haz('bench', 114, 42),
