@@ -490,13 +490,20 @@ function ballDepth(run) {
   var b = run.ball, g = run.grid;
   var flat = b.x + b.y + PROP_BIAS;
   if (b.state === ST.SINK) return flat;      // composed at the water's own depth
-  var best = flat;
-  for (var t = BALL_STEP; t <= BALL_REACH; t += BALL_STEP) {
+  var best = flat, t = 0, guard = 0;
+  while (t < BALL_REACH && guard++ < 64) {
+    // Sample at whichever comes first: the fixed stride, or the next lattice line the ray
+    // crosses. A quarter-tile stride steps straight over lips the ball clears by a hand's
+    // width — and a fixed stride of ANY size can cross an x boundary and a y boundary
+    // inside one step and miss the cell between them entirely, which is a one-cell sliver
+    // of paper the ball then gets painted over.
+    var nx = Math.floor(b.x + t) + 1 - b.x;
+    var ny = Math.floor(b.y + t) + 1 - b.y;
+    t = Math.min(t + BALL_STEP, nx + 1e-9, ny + 1e-9, BALL_REACH);
     var x = b.x + t, y = b.y + t;
     if (solidAt(g, x, y) !== 1) continue;
     if (b.z + Z_BAND * t > heightAt(g, x, y)) continue;
-    // The CELL's band, not the distance walked. A quarter-tile stride steps straight over
-    // lips the ball clears by a hand's width, which is the whole question.
+    // The CELL's band, not the distance walked.
     var k = Math.floor(x) + Math.floor(y) - 0.5;
     if (k < best) best = k;
     break;
@@ -536,6 +543,12 @@ function drawFlag(ctx, run, cam, i) {
   var z = heightAt(g, f.x, f.y);
   var raise = run.flagRaise[i];
   var sx = projX(cam, f.x, f.y), sy = projY(cam, f.x, f.y, z);
+  // A flag is a prop and is culled like one. There are five of them on the later courses,
+  // most of them a thousand pixels off the bottom of the frame at any moment, and each was
+  // handing over six paths that painted nothing. The ball and the cup are the exceptions —
+  // the camera is on one and aimed at the other — a flag is not.
+  if (sx < -PROP_PAD_X || sx > W + PROP_PAD_X) return;
+  if (sy < -PROP_PAD_TOP || sy > H + PROP_PAD_BOTTOM) return;
   var poleH = (14 + 20 * raise) * U;
 
   ctx.beginPath();                                   // the trigger, drawn on the ground
@@ -646,9 +659,46 @@ function sweep(ctx, run, cam) {
   var b1 = Math.min(bi.hi, Math.ceil(camS + (H * (1 - BALL_Y) + CELL_DOWN) / (TILE / 4) + slack));
 
   var tops = {}, walls = {}, folds = [], creases = [];
+  // TOP QUADS BATCH ACROSS BANDS, and this is exact rather than an approximation.
+  //
+  // Two top quads never overlap each other: the surface folds in screen space only where
+  // the gradient along the view ray reaches (TILE/2)/Z_SCALE = 1.39, and the steepest
+  // thing any piece declares is 0.82. So the order of tops AMONG THEMSELVES does not
+  // matter — only their order against WALLS does.
+  //
+  // And a wall at band b can only reach up over a top at band a < b if its cell stands
+  // more than (b-a)*(TILE/4)/Z_SCALE = 0.694*(b-a) units ABOVE it, which is a cliff. On a
+  // course that descends, that almost never happens — so the batch runs the length of the
+  // frame and 400 one-quad fills become a couple of dozen.
+  var bandTops = {}, batchMinH = Infinity, batchLive = false, bandMinH = Infinity;
+  var BAND_RISE = (TILE / 4) / Z_SCALE;
+
+  function flushBatch() {
+    if (!batchLive) return;
+    flushTops(ctx, tops);
+    batchMinH = Infinity; batchLive = false;
+  }
+  // The current band's tops are held aside until the band is done, so the wall test above
+  // only ever compares against bands STRICTLY BEHIND it — a wall never reaches up over a
+  // top in its own band, and mixing them in would make the test flush on every cell.
+  function closeBand() {
+    for (var k in bandTops) {
+      var dst = tops[k] || (tops[k] = []), sr = bandTops[k];
+      for (var q2 = 0; q2 < sr.length; q2++) dst.push(sr[q2]);
+      delete bandTops[k];
+    }
+    if (bandMinH < batchMinH) batchMinH = bandMinH;
+    if (bandMinH < Infinity) batchLive = true;
+    bandMinH = Infinity;
+  }
 
   for (var band = b0; band <= b1; band++) {
-    while (si < sprites.length && sprites[si].k < band) drawSprite(ctx, run, cam, sprites[si++]);
+    // A sprite has to sit between the tops behind it and the tops in front of it, so the
+    // batch is flushed before every one. There are only ever a handful in frame.
+    while (si < sprites.length && sprites[si].k < band) {
+      flushBatch();
+      drawSprite(ctx, run, cam, sprites[si++]);
+    }
     var list = bi.map[band];
     if (!list) continue;
 
@@ -678,13 +728,32 @@ function sweep(ctx, run, cam) {
       var nl = Math.hypot(gx, gy, 1);
       var sk = shadeBucket(-gx / nl, -gy / nl, 1 / nl);
       var key = surf * SHADES + sk;
-      (tops[key] || (tops[key] = [])).push(pAx, pAy, pBx, pBy, pCx, pCy, pDx, pDy);
 
       // Terrain is continuous across any connected run of paper — neighbouring cells
       // share corners — so the only true steps in this world are the cliffs across a
       // void. A wall goes exactly where the neighbour is not there.
       var eastVoid = (i + 1 >= g.nx) || !g.solid[ck + 1];
       var southVoid = (j + 1 >= g.ny) || !g.solid[ck + g.nx];
+      // If this cell carries a wall and stands high enough above anything already in the
+      // batch to reach up over it, the batch goes down first. BAND_RISE is the allowance
+      // for the nearest band behind, which is the tightest case there is.
+      if ((eastVoid || southVoid) && batchLive && hc - batchMinH > BAND_RISE) flushBatch();
+
+      // NO EXTRA TERRAIN CULL HERE, and that is a measured decision rather than an
+      // omission. Dropping quads whose four corners are all past one edge of the canvas
+      // looks provably invisible and is not: adjacent quads inside one batched path fill
+      // as a UNION with no internal seam, so removing any of them turns a survivor's
+      // shared edge into an anti-aliased boundary. Every variant tried moved pixels in the
+      // posed frames — the above-frame test alone moved three of five. The CELL_UP /
+      // CELL_DOWN margins stay exactly as measured; they exist to make the cull provably
+      // invisible, not to be tight, and this is the third time this game has had that
+      // bound wrong by reasoning about it rather than hashing it.
+      (bandTops[key] || (bandTops[key] = [])).push(pAx, pAy, pBx, pBy, pCx, pCy, pDx, pDy);
+      if (hc < bandMinH) bandMinH = hc;
+
+      // Walls are not culled quad by quad either, for the same reason and one more: they
+      // are bucketed by SURFACE, so dropping quads from a bucket does not remove a fill at
+      // all unless it empties the bucket. The saving was nil and the pixels moved.
       if (eastVoid) {
         (walls[surf] || (walls[surf] = [])).push(pBx, pBy, pCx, pCy);
         if (pBy < H && pBy > -TILE) creases.push(pBx, pBy, pCx, pCy);
@@ -700,10 +769,11 @@ function sweep(ctx, run, cam) {
     }
 
     flushWalls(ctx, walls);
-    flushTops(ctx, tops);
     flushLines(ctx, folds, 'rgba(246,241,226,0.30)', 1);
     flushCreases(ctx, creases);
+    closeBand();
   }
+  flushBatch();
   while (si < sprites.length) drawSprite(ctx, run, cam, sprites[si++]);
 }
 

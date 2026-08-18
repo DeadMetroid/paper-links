@@ -5,25 +5,33 @@ conversation.
 
 ## Current step
 
-**Section 16, steps 9-11 — the clock tests, the audio test, and the remaining validators.**
-All six courses are authored and every route clears. 32 tests still to write, and 49-52
-are expected to fail the first time they run.
+**Section 16, step 13 — the docs, the FLOOR, and the disclosure check.**
+All 52 tests are green. The cull pass (step 12) is done and its outcome is recorded below.
 
 ## Last three things done
 
-1. Step 8 complete: courses 2-6 authored. **All 12 routes across the six clear with zero
-   falls, and every one rates BIRDIE or PAR.**
-2. Built `tests/why.js` — where the oracle lost the ball and to what. Between it and
-   `tests/map.js` this is what made authoring five courses tractable.
-3. Fixed a real engine bug `hazardIssues` found: `hazSweep` counted a TRIGGER's field
-   radius as both its path AND its body, reporting a sprinkler as 5.52 wide when it
-   reaches 2.92, and refusing lanes it fits on comfortably.
+1. Steps 9-11: tests 24-52 written. **52/52 green.**
+2. Step 12, the cull pass. Cross-band batching of terrain tops cut the worst frame from
+   524 fills to 461. Every attempt to cull terrain quads and wall quads on top of that
+   MOVED PIXELS in the posed frames and was dropped — see below. The flag cull stayed
+   because it is byte-identical.
+3. Tests 45, 46, 50, 51 all failed the first time they ran, exactly as the brief predicted
+   for the variety tests, and three of them were real defects rather than bad tests.
+
+## What the last four tests found
+
+| test | what it caught |
+|---|---|
+| 45 | a REAL renderer defect: `ballDepth`'s fixed 0.1 stride can cross an x boundary and a y boundary inside one step and miss the cell between them, so the ball got painted over a one-cell sliver of paper that occluded it. The march now samples at whichever comes first, the stride or the next lattice line. |
+| 46 | the worst frame at 524 fills, and 16.7% of every frame's paths landing off the canvas — a number I had never actually seen, because the count assertion failed first and the waste assertion never ran. |
+| 50 | course 1 is ramps and one camber, and my first draft of the test demanded three distinct leg kinds per course. Course 1 is authored verbatim from the brief; the floor is two, and the vocabulary check moved to the whole game. |
+| 51 | course 3 had a 79.5-tile stretch between checkpoints. Trimming legs could not fix it: the stretch between two flags is MANHATTAN-BOUND by where the flags are, and from (26,4.5) to (64,42.5) the floor was 76. Moving gate 2 three rows up fixed it. Course 4's shortcut route legitimately merges two legs, so a declared skip gets the two legs it gave up and not a tile more. |
 
 ## Next three up
 
-1. Tests 24-35 (the physics rules), 36-43 (gates and the clock), 10/13/14.
-2. Tests 44-48 (render and cull), 49-52 (variety and use).
-3. Step 12 the cull pass, step 13 the docs and the FLOOR.
+1. `README.md`, `ASSETS.md`, `docs/VIDEO_GUIDE.md` final; walk the video guide through once.
+2. Tick every box in `docs/FLOOR.md` from OBSERVED behaviour, never from code.
+3. `git ls-files` disclosure check, final commit.
 
 ## Measured numbers
 
@@ -48,9 +56,11 @@ Derived, checked against the brief's stated values:
 | course 1 rest ratio | LAW 6.7 | 1.0% (target under 7%) |
 | oracle, course 1 | route 0 / route 1 | cleared, 0 falls, clock 21.8 / 21.9, credit 9 |
 | course 1 net time | clock - credit vs parTime 16, bandStep 4 | 12.8 -> -1 shot = BIRDIE |
-| frame cost, posed | course 1, five poses, recording canvas | 151 fills, 79 strokes |
-| frame cost, live | course 1 in the browser, ball moving | 192 fills, 97 strokes |
-| build-01's worst frame, for scale | from the brief | 681 fills, 571 strokes (275/192 painting nothing) |
+| frame cost, worst of all six | 306 posed frames, recording canvas | **461 fills, 138 strokes** |
+| ...before cross-band batching | same sweep | 524 fills |
+| paths landing >200px off canvas | the defect the complaint names | **2.2%** |
+| paths landing just off canvas | the CELL_UP/CELL_DOWN margins' deliberate slack | 12.5% |
+| build-01's worst frame, for scale | from the brief | 681 fills, 571 strokes, of which 275 and 192 painted NOTHING |
 | live play | held D for 1.2 s from the tee | ball moved 9.44 tiles, speed 8.99 |
 | LAW 12.1 check | flat / plain ramp 0.14 / camber 0.175 | shade bucket 7 / 8 / 9 — the camber does move |
 
@@ -78,6 +88,29 @@ Every route: **zero falls**. Route length rises monotonically. Flags 3/3/4/4/5/5
 | **nothing moving sits on a narrow leg that already has a camber or water** | the leg is the threat; a chaser on top of it is two prices for one decision, and the oracle loses the ball every run |
 | a static **on** the racing line is a wall, not an obstacle | a banked chute centres the ball exactly, so it jams against an infinite mass and no input gets past |
 | a donut's hole must be somewhere you **can miss** | cut where both routes crossed, the oracle drove into it four runs out of four |
+
+## The cull pass (step 12), and what it actually concluded
+
+Batching terrain tops ACROSS bands is exact in the ordering sense — two top quads never
+overlap, because the surface only folds in screen space at a gradient of 1.39 along the
+view ray and the steepest piece declares 0.82 — and it cut the worst frame from 524 fills
+to 461. It is **not** byte-identical, and the reason is worth writing down: adjacent quads
+inside ONE path fill as a union with no internal seam, so batching removes the hairline
+anti-aliased seams between neighbouring cells. That is an improvement in the picture, not
+a regression, but it is a pixel change and it is recorded as one.
+
+Everything else tried was reverted:
+
+| attempted | why it was dropped |
+|---|---|
+| cull a top quad whose four corners are all past one edge of the canvas | looks provably invisible; moved three of five posed frames. Removing a quad from a batched path turns a survivor's shared edge into an anti-aliased boundary. |
+| cull a wall whose top edge is already below the canvas | moved one frame, and saved nothing anyway: walls bucket by SURFACE, so dropping quads does not remove a fill unless it empties the bucket. |
+| cull a wall by X | changes which wall is the highest in its bucket, and the bucket's vertical gradient starts there — so it repaints every wall that stays. |
+| cull flags like props | **KEPT.** Byte-identical, and it removes six paths per off-screen flag on courses that carry five. |
+
+The brief says the cull bound "was got wrong twice by reasoning about it". This is the
+third and fourth time, and the frame hashes caught both. The margins are left exactly as
+measured.
 
 ## Deviations from the build order, and why
 

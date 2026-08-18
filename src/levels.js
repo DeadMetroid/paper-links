@@ -206,9 +206,12 @@ function bunkers() {
   // BUNKER B — the only dry line through it is two tiles wide and hard against the void.
   P.push(bowl(29, 22, 3, 6, l1.exit, 0.30, SURF.SAND));
   // A camber for the second half, leaning at the edge you just threaded past.
-  var l2 = bankY(29, 28, 6, 14, l1.exit, 0.28, 0.8);    P.push(l2);
-  P.push(pad(29, 42, 6, 6, l2.exit));
-  var lx = rampX(35, 42, 13, 6, l2.exit, (l2.exit - zJoin) / 13);   P.push(lx);
+  // Ten tiles, not fourteen: at fourteen the stretch from the first checkpoint to the
+  // second spanned the whole branch and measured 79.5 tiles, and a leg you cannot re-drive
+  // in a few seconds turns a fall from a setback into a punishment.
+  var l2 = bankY(29, 28, 6, 10, l1.exit, 0.28, 0.8);    P.push(l2);
+  P.push(pad(29, 38, 6, 6, l2.exit));
+  var lx = rampX(35, 38, 7, 6, l2.exit, (l2.exit - zJoin) / 7);     P.push(lx);
 
   // RIGHT — out along the top, over a bunker that crosses the WHOLE lane. There is no
   // line around this one: it is paid for in seconds, and the bill is bigger the faster
@@ -217,13 +220,21 @@ function bunkers() {
   P.push(pad(53, 2, 8, 9, r1.exit));
   P.push(bowl(53, 2, 8, 6, r1.exit, 0.35, SURF.SAND));
   // ...and a CHUTE for the long side: walled, forgiving, and slow to leave.
-  var r2 = chuteY(53, 11, 8, 31, r1.exit, (r1.exit - zJoin) / 31, 1.0);   P.push(r2);
+  var r2 = chuteY(53, 11, 8, 27, r1.exit, (r1.exit - zJoin) / 27, 1.0);   P.push(r2);
 
   // The rejoin is a DONUT: a wide pad is the safest ground in the game, and a hole in the
   // middle makes it two ways round with a wrong one.
-  P.push(pad(48, 42, 14, 10, zJoin));
-  P.push(cut(53, 45, 5, 5));
-  var g2 = gateX(62, 45, 4, 3, zJoin);                  P.push(g2);
+  // Twenty tiles across, and not one square foot of it is flat: a dish over the left
+  // half, a hole through the middle, and only a three-tile lip along the top. The two ways
+  // down arrive fourteen tiles apart, so the rejoin has to be this wide — LAW 6.7 is about
+  // what the ground DOES, not how much of it there is.
+  P.push(pad(42, 38, 20, 10, zJoin));
+  P.push(bowl(42, 41, 10, 7, zJoin, 0.35));
+  P.push(cut(53, 41, 5, 5));
+  // On the junction's TOP edge, not its middle. The stretch between two checkpoints is
+  // Manhattan-bound by where the two flags ARE — no amount of trimming legs gets under it —
+  // and from (26,4.5) to (64,42.5) that floor was 76 tiles. Three rows up it is 73.
+  var g2 = gateX(62, 38, 4, 3, zJoin);                  P.push(g2);
 
   // A RIDGE over open void — the inverse of a chute. The crest is high ground and both
   // edges fall away, so the drift finishes itself and nothing has to touch you.
@@ -231,50 +242,50 @@ function bunkers() {
   // exactly where recovering matters. At rise 0.8 across 5 that is 0.64, half again past
   // critical, and the ridge stops being a ridge and becomes a pair of cliffs. 0.5 across
   // 7 is 0.29: firm, and still recoverable.
-  var cr = crownX(66, 43, 16, 7, zJoin, 0.20, 0.5);     P.push(cr);
+  var cr = crownX(66, 39, 16, 7, zJoin, 0.20, 0.5);     P.push(cr);
 
-  P.push(pad(82, 42, 11, 10, cr.exit));
+  P.push(pad(82, 38, 11, 10, cr.exit));
   // The pond, in the corner nothing routes through — the water this course owes. Set one
   // row higher it was directly under the line a ball leaving the ridge drifts onto, and
   // the oracle lost the ball in it five runs out of five. A corner nothing routes through
   // has to be measured against where the ball ACTUALLY goes, not where the route is drawn.
-  P.push(pond(82, 49, 4, 3, cr.exit, 0.5));
-  P.push(cut(88, 42, 5, 3));
-  var g3 = gateY(88, 52, 3, 4, cr.exit);                P.push(g3);
+  P.push(pond(82, 45, 4, 3, cr.exit, 0.5));
+  P.push(cut(88, 38, 5, 3));
+  var g3 = gateY(88, 48, 3, 4, cr.exit);                P.push(g3);
 
   // A FUNNEL: walls that converge on a throat. A commitment, not a choice.
-  var f1 = funnelY(86, 56, 7, 16, cr.exit, 0.24, 0.9, 0.4);   P.push(f1);
-  var g4 = gateY(88, 72, 3, 4, f1.exit);                P.push(g4);
+  var f1 = funnelY(86, 52, 7, 16, cr.exit, 0.24, 0.9, 0.4);   P.push(f1);
+  var g4 = gateY(88, 68, 3, 4, f1.exit);                P.push(g4);
 
-  var t1 = rampY(86, 76, 7, 12, f1.exit, 0.22);         P.push(t1);
-  P.push(pad(83, 91, 12, 12, t1.exit - 2.0, SURF.GREEN));
-  P.push(greenDish(85, 93, 8, 8, t1.exit - 2.0, 0.4));
+  var t1 = rampY(86, 72, 7, 12, f1.exit, 0.22);         P.push(t1);
+  P.push(pad(83, 87, 12, 12, t1.exit - 2.0, SURF.GREEN));
+  P.push(greenDish(85, 89, 8, 8, t1.exit - 2.0, 0.4));
 
   return {
     name: 'THE BUNKERS',
     parTime: 20, bonus: 3,
     pieces: P,
     start: { x: 4, y: 4 },
-    cup: { x: 89, y: 97, r: 0.9 },
+    cup: { x: 89, y: 93, r: 0.9 },
     flags: [g1.flag, g2.flag, g3.flag, g4.flag],
     routes: [
       // 0 — LEFT, threading the dry line down the side of bunker B.
       [{ x: 4, y: 4 }, { x: 16, y: 4 }, g1.flag, { x: 31, y: 4 }, { x: 32, y: 11 },
        { x: 32, y: 20 }, { x: 33.5, y: 24 }, { x: 33.5, y: 27 }, { x: 32, y: 31 }, { x: 32, y: 40 },
-       { x: 32, y: 45 }, { x: 40, y: 45 }, { x: 48, y: 45 }, { x: 51, y: 44 },
-       { x: 60, y: 44 }, g2.flag, { x: 70, y: 46.5 }, { x: 80, y: 46.5 }, { x: 88, y: 46 },
-       { x: 89.5, y: 50 }, g3.flag, { x: 89.5, y: 62 }, { x: 89.5, y: 70 }, g4.flag,
-       { x: 89.5, y: 82 }, { x: 89.5, y: 89 }, { x: 89, y: 94 }, { x: 89, y: 97 }],
+       { x: 32, y: 41 }, { x: 38, y: 40 }, { x: 44, y: 39.5 }, { x: 54, y: 39.5 },
+       g2.flag, { x: 70, y: 40.5 }, { x: 80, y: 40.5 }, { x: 88, y: 42 },
+       { x: 89.5, y: 46 }, g3.flag, { x: 89.5, y: 58 }, { x: 89.5, y: 66 }, g4.flag,
+       { x: 89.5, y: 78 }, { x: 89.5, y: 85 }, { x: 89, y: 90 }, { x: 89, y: 93 }],
       // 1 — RIGHT, straight through the bunker that crosses the whole lane.
       [{ x: 4, y: 4 }, { x: 16, y: 4 }, g1.flag, { x: 33, y: 3 }, { x: 38, y: 5 }, { x: 46, y: 5 },
-       { x: 53, y: 5 }, { x: 57, y: 7 }, { x: 57, y: 15 }, { x: 57, y: 30 },
-       { x: 57, y: 40 }, { x: 56, y: 44 }, { x: 60, y: 44 }, g2.flag,
-       { x: 70, y: 46.5 }, { x: 80, y: 46.5 }, { x: 84, y: 46 },
-       { x: 87, y: 49 }, g3.flag, { x: 89.5, y: 62 }, { x: 89.5, y: 70 }, g4.flag,
-       { x: 89.5, y: 82 }, { x: 89.5, y: 89 }, { x: 89, y: 94 }, { x: 89, y: 97 }],
+       { x: 53, y: 5 }, { x: 57, y: 7 }, { x: 57, y: 15 }, { x: 57, y: 28 },
+       { x: 57, y: 36 }, { x: 57, y: 39.5 }, g2.flag,
+       { x: 70, y: 40.5 }, { x: 80, y: 40.5 }, { x: 88, y: 42 },
+       { x: 89.5, y: 46 }, g3.flag, { x: 89.5, y: 58 }, { x: 89.5, y: 66 }, g4.flag,
+       { x: 89.5, y: 78 }, { x: 89.5, y: 85 }, { x: 89, y: 90 }, { x: 89, y: 93 }],
     ],
     hazards: [haz('tree', 34, 8), haz('windmill', 46, 8), haz('cart', 57, 20, 0.9), haz('muncher', 55, 25),
-              haz('dog', 52, 50, 0, 5), haz('bench', 84, 44)],
+              haz('dog', 47, 45, 0, 4), haz('bench', 84, 40)],
   };
 }
 
