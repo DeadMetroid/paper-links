@@ -62,21 +62,6 @@ function buildBodies(run) {
   }
 }
 
-// The sweep a hazard's disc covers. For a chaser the disc is its WHOLE LEASH, because
-// that is how far it will walk to reach you (LAW 9.2).
-function hazSweep(b) {
-  var path = 0;
-  if (b.prim === 'PERIODIC') {
-    path = b.def.path === 'loop' ? b.def.radius : b.def.amp;
-  } else if (b.prim === 'SEEKER' || b.prim === 'RIVAL') {
-    path = b.leash;
-  }
-  // A TRIGGER never moves, so its path radius is zero and its `r` IS the disc — counting
-  // the field as both the path AND the body reported a sprinkler as 5.52 wide when it
-  // reaches 2.92, and refused lanes it fits on comfortably.
-  return path + b.r + BALL_R;
-}
-
 // Walkable means solid paper more than SEEK_CLEAR clear of every static. A dog that runs
 // off a catwalk reads as broken.
 function walkable(run, x, y) {

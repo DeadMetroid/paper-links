@@ -5,17 +5,40 @@ conversation.
 
 ## Current step
 
-**Section 16, step 13 — the docs, the FLOOR, and the disclosure check.**
-All 52 tests are green. The cull pass (step 12) is done and its outcome is recorded below.
+**Step 13 — DONE.** All 52 tests green, every FLOOR box ticked from something observed in
+the running game, the disclosure check read off `git ls-files`.
 
 ## Last three things done
 
-1. **52/52 tests green.**
-2. **56 mutations, 0 inadequate, and all 52 tests falsified ON PURPOSE** — `node tests/mutate.js`
-   now reports that tally itself, because "every test falsified at least once" is a claim
-   somebody has to keep true rather than remember.
-3. Built `tests/walk.js`: drives the shipped `game.html` from `file://` through the whole
-   of `docs/VIDEO_GUIDE.md`, capturing a frame per beat. Sixteen beats, zero console errors.
+1. **Step 13.** `README.md`, `ASSETS.md`, `docs/VIDEO_GUIDE.md` finished; every box in
+   `docs/FLOOR.md` ticked with the frame or the command that was watched written beside it.
+2. Built `tests/playthrough.js` — **all six courses played start to finish in a real
+   browser over `file://`, through the game's own key path**, with the oracle injected into
+   the page and its eight directions turned back into W/A/S/D. Nothing teleported, no state
+   poked. Six courses, zero falls, zero crashes, zero console errors, ~110 s of play.
+3. Dead-code sweep. Removed from the artifact: `gradMag` and `hazSweep` (only the
+   validators ever called them — they now live in `tests/validate.js`), and `drySlot` (an
+   alias of `dry` no course ever placed). `COL_EDGE` was declared and then the renderer
+   typed the same colour out again — the fold lines derive from it now. `waveY` existed and
+   no course placed it, so THE LONG SIXTH's rival leg is a washboard: three whole waves, so
+   the term is zero at both ends and nothing downstream of it moved.
+
+## Disclosure
+
+`git ls-files` lists 41 files including `CLAUDE.md`, `game.html`, `build.js`, `README.md`,
+`ASSETS.md`, `.claude/settings.json`, `.claude/hooks/floor-gate.ps1`, `docs/FLOOR.md`,
+`docs/spec.md`, `docs/state.md`, `docs/VIDEO_GUIDE.md`, all of `src/` and all of `tests/`.
+Nothing under `.claude/` is untracked. A grep over every tracked file for the machine user,
+the absolute drive paths and any email address returns nothing.
+
+**One thing that is disclosed rather than fixed:** commit AUTHORSHIP. This environment sets
+`GIT_AUTHOR_NAME`/`GIT_AUTHOR_EMAIL`/`GIT_COMMITTER_*`, which override the repository's own
+`user.name` / `user.email` (set at the first commit to a non-personal placeholder, and
+still set — `git config user.name` reads "Paper Links Build Agent"). Every commit is
+therefore authored by the machine owner's pseudonymous GitHub handle and their
+`users.noreply.github.com` alias, which is what that alias exists for. No FILE contains it.
+Rewriting ten commits to strip the owner's authorship of their own repository would be a
+destructive, outward-facing change and is not one to make unasked.
 
 ## What the mutation pass found — four tests that were not tests
 

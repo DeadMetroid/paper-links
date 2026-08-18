@@ -94,12 +94,6 @@ function gradAt(g, wx, wy, out) {
   return out;
 }
 
-function gradMag(g, wx, wy) {
-  var t = [0, 0];
-  gradAt(g, wx, wy, t);
-  return Math.hypot(t[0], t[1]);
-}
-
 // Paper standing more than WALL_STEP above the ball is a cliff beside it, not ground it
 // is about to land on (LAW 5.4). This is the one test that stops a falling ball climbing
 // the tier it just fell off.

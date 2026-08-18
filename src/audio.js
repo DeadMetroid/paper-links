@@ -33,6 +33,10 @@ function fillNoise(buf, len) {
   }
 }
 
+// The one seam in this file the game itself does not use. LAW 13.1 is a claim about the
+// SHAPE OF THE GRAPH — that nothing in the rolling bed is an oscillator — and the only way
+// to assert that is to build the graph against a context that records it. One line, and it
+// is what makes the law checkable instead of merely stated.
 function setAudioFactory(f) { _audioFactory = f; }
 
 function ensureAudio() {

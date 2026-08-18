@@ -1,5 +1,19 @@
 {
-  "dependencies": {
+  "name": "paper-links",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PAPER LINKS. The game is game.html and it has NO dependencies — open it by double-clicking. This file exists only for the browser-driven test harnesses.",
+  "scripts": {
+    "test": "node tests/run.js",
+    "build": "node build.js",
+    "mutate": "node tests/mutate.js",
+    "play": "node tests/playthrough.js",
+    "walk": "node tests/walk.js",
+    "frames": "node tests/shots.js --check",
+    "gates": "node tests/sheets.js gates",
+    "props": "node tests/sheets.js props"
+  },
+  "devDependencies": {
     "puppeteer-core": "^25.8.0"
   }
 }

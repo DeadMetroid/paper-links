@@ -552,9 +552,10 @@ function longsixth() {
   // checkpoint. Water either side is not ground, so this measures as a three-tile neck.
   var g4 = gateY(121, 70, 3, 4, z);                     P.push(g4);
 
-  // The rival's leg. It is the only threat in the game you beat rather than avoid: ram it
-  // off the paper before it rams you, or lead it over the edge and let it do the rest.
-  var rv = rampY(119, 74, 7, 20, z, 0.22);              P.push(rv);   z = rv.exit;
+  // The rival's leg — and it is a WASHBOARD, because a chase over ground that keeps
+  // changing what it is under you is worse than either on its own. Three whole waves, so
+  // the term is zero at both ends and nothing downstream of it moves.
+  var rv = waveY(119, 74, 7, 20, z, 0.22, 0.35, 3);     P.push(rv);   z = rv.exit;
   var g5 = gateY(121, 94, 3, 4, z);                     P.push(g5);
 
   var fin = chuteY(119, 98, 7, 14, z, 0.30, 1.0);       P.push(fin);  z = fin.exit;

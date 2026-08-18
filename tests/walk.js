@@ -14,6 +14,11 @@ var shots = require('./shots.js');
 
 var OUT = path.join(__dirname, '_out');
 var URL = 'file://' + path.join(__dirname, '..', 'game.html').replace(/\\/g, '/');
+// A PERSISTENT profile, so "close the browser and reopen it" is a real browser restart
+// rather than a page reload. localStorage surviving on file:// is the claim being tested,
+// and a fresh temp profile on every launch would make it untestable — and make it look
+// like it had passed.
+var PROFILE = path.join(OUT, 'walk-profile');
 
 function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -21,19 +26,25 @@ async function main() {
   var exe = shots.findBrowser();
   if (!exe) throw new Error('no installed browser found');
   var puppeteer = require('puppeteer-core');
-  var browser = await puppeteer.launch({
-    executablePath: exe, headless: 'new',
-    args: ['--allow-file-access-from-files', '--hide-scrollbars', '--force-device-scale-factor=1'],
-  });
   var errors = [];
   var log = [];
   fs.mkdirSync(OUT, { recursive: true });
+  fs.rmSync(PROFILE, { recursive: true, force: true });
 
-  try {
-    var page = await browser.newPage();
+  var browser = null, page = null;
+  async function openBrowser() {
+    browser = await puppeteer.launch({
+      executablePath: exe, headless: 'new', userDataDir: PROFILE,
+      args: ['--allow-file-access-from-files', '--hide-scrollbars', '--force-device-scale-factor=1'],
+    });
+    page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 900 });
     page.on('pageerror', function (e) { errors.push('pageerror: ' + e.message); });
     page.on('console', function (m) { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+  }
+  await openBrowser();
+
+  try {
 
     async function shot(name, note) {
       var buf = await page.screenshot({ type: 'png' });
@@ -111,9 +122,15 @@ async function main() {
     await tap('Escape');
     await page.waitForFunction('APP.state === "MENU"', { timeout: 5000 });
     var stored = await page.evaluate('window.localStorage.getItem(SAVE_KEY)');
-    await page.reload({ waitUntil: 'load' });
+    // CLOSE THE BROWSER. Not the tab, not a reload — the whole process, and then a fresh
+    // one against the same profile. That is what the video guide asks a viewer to watch,
+    // and it is the only version of this that proves localStorage survives on file://.
+    await browser.close();
+    await wait(500);
+    await openBrowser();
+    await page.goto(URL, { waitUntil: 'load' });
     await page.waitForFunction('typeof APP !== "undefined" && APP.state === "MENU"', { timeout: 15000 });
-    await shot('8-reload', 'after a full page reload, CONTINUE is live: ' + stored);
+    await shot('8-reload', 'browser CLOSED and reopened, CONTINUE is live: ' + stored);
     await tap('Enter');
     await page.waitForFunction('APP.state === "PLAY"', { timeout: 5000 });
     await shot('9-continue', 'CONTINUE resumed on course ' + (await page.evaluate('APP.course') + 1));

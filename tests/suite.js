@@ -1554,7 +1554,7 @@ test(48, 'a chaser leaves a lane past it on every route it can reach', function 
     run.bodies.forEach(function (b) {
       if (b.prim !== 'SEEKER' && b.prim !== 'RIVAL') return;
       chasers++;
-      var sweep = PL.hazSweep(b);
+      var sweep = V.hazSweep(b);
       c.routes.forEach(function (r, ri) {
         for (var s = 0; s <= r.total; s += 0.25) {
           var p = PL.pointAt(r, s);

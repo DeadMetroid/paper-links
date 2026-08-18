@@ -135,7 +135,6 @@ function fragile(x,y,w,h) { return paint(x,y,w,h,SURF.FRAGILE); }
 function sand(x,y,w,h)    { return paint(x,y,w,h,SURF.SAND); }
 function rough(x,y,w,h)   { return paint(x,y,w,h,SURF.ROUGH); }
 function dry(x,y,w,h)     { return paint(x,y,w,h,SURF.FAIRWAY); }
-function drySlot(x,y,w,h) { return paint(x,y,w,h,SURF.FAIRWAY); }   // a gate through water
 function beltOver(x,y,w,h,dx,dy) {
   var m = Math.hypot(dx, dy);
   return paint(x,y,w,h,SURF.BELT,dx/m,dy/m);
@@ -165,6 +164,13 @@ function skips(flag, routes) { flag.skip = routes; return flag; }
 // ---- routes -----------------------------------------------------------------
 // An authored polyline from the tee to the cup, per branch. This is the only thing that
 // knows "the way through" — the geometry does not have to encode it.
+//
+// The GAME never queries a route: the fairness oracle and the validators do. They are here
+// anyway, and deliberately, because a route is part of the level's own declaration — the
+// same way a flag's position is — and the compiler that turns authored points into
+// arc-length-indexed polylines is the same content pipeline that turns pieces into a grid.
+// Splitting the data from the two functions that read it would put the level model in two
+// places and give it two chances to drift.
 
 function makeRoute(pts) {
   var cum = [0], total = 0;

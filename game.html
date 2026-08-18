@@ -236,12 +236,6 @@ function gradAt(g, wx, wy, out) {
   return out;
 }
 
-function gradMag(g, wx, wy) {
-  var t = [0, 0];
-  gradAt(g, wx, wy, t);
-  return Math.hypot(t[0], t[1]);
-}
-
 // Paper standing more than WALL_STEP above the ball is a cliff beside it, not ground it
 // is about to land on (LAW 5.4). This is the one test that stops a falling ball climbing
 // the tier it just fell off.
@@ -736,7 +730,6 @@ function fragile(x,y,w,h) { return paint(x,y,w,h,SURF.FRAGILE); }
 function sand(x,y,w,h)    { return paint(x,y,w,h,SURF.SAND); }
 function rough(x,y,w,h)   { return paint(x,y,w,h,SURF.ROUGH); }
 function dry(x,y,w,h)     { return paint(x,y,w,h,SURF.FAIRWAY); }
-function drySlot(x,y,w,h) { return paint(x,y,w,h,SURF.FAIRWAY); }   // a gate through water
 function beltOver(x,y,w,h,dx,dy) {
   var m = Math.hypot(dx, dy);
   return paint(x,y,w,h,SURF.BELT,dx/m,dy/m);
@@ -766,6 +759,13 @@ function skips(flag, routes) { flag.skip = routes; return flag; }
 // ---- routes -----------------------------------------------------------------
 // An authored polyline from the tee to the cup, per branch. This is the only thing that
 // knows "the way through" — the geometry does not have to encode it.
+//
+// The GAME never queries a route: the fairness oracle and the validators do. They are here
+// anyway, and deliberately, because a route is part of the level's own declaration — the
+// same way a flag's position is — and the compiler that turns authored points into
+// arc-length-indexed polylines is the same content pipeline that turns pieces into a grid.
+// Splitting the data from the two functions that read it would put the level model in two
+// places and give it two chances to drift.
 
 function makeRoute(pts) {
   var cum = [0], total = 0;
@@ -1021,21 +1021,6 @@ function buildBodies(run) {
     };
     run.bodies.push(b);
   }
-}
-
-// The sweep a hazard's disc covers. For a chaser the disc is its WHOLE LEASH, because
-// that is how far it will walk to reach you (LAW 9.2).
-function hazSweep(b) {
-  var path = 0;
-  if (b.prim === 'PERIODIC') {
-    path = b.def.path === 'loop' ? b.def.radius : b.def.amp;
-  } else if (b.prim === 'SEEKER' || b.prim === 'RIVAL') {
-    path = b.leash;
-  }
-  // A TRIGGER never moves, so its path radius is zero and its `r` IS the disc — counting
-  // the field as both the path AND the body reported a sprinkler as 5.52 wide when it
-  // reaches 2.92, and refused lanes it fits on comfortably.
-  return path + b.r + BALL_R;
 }
 
 // Walkable means solid paper more than SEEK_CLEAR clear of every static. A dog that runs
@@ -1773,9 +1758,10 @@ function longsixth() {
   // checkpoint. Water either side is not ground, so this measures as a three-tile neck.
   var g4 = gateY(121, 70, 3, 4, z);                     P.push(g4);
 
-  // The rival's leg. It is the only threat in the game you beat rather than avoid: ram it
-  // off the paper before it rams you, or lead it over the edge and let it do the rest.
-  var rv = rampY(119, 74, 7, 20, z, 0.22);              P.push(rv);   z = rv.exit;
+  // The rival's leg — and it is a WASHBOARD, because a chase over ground that keeps
+  // changing what it is under you is worse than either on its own. Three whole waves, so
+  // the term is zero at both ends and nothing downstream of it moves.
+  var rv = waveY(119, 74, 7, 20, z, 0.22, 0.35, 3);     P.push(rv);   z = rv.exit;
   var g5 = gateY(121, 94, 3, 4, z);                     P.push(g5);
 
   var fin = chuteY(119, 98, 7, 14, z, 0.30, 1.0);       P.push(fin);  z = fin.exit;
@@ -1861,6 +1847,10 @@ function fillNoise(buf, len) {
   }
 }
 
+// The one seam in this file the game itself does not use. LAW 13.1 is a claim about the
+// SHAPE OF THE GRAPH — that nothing in the rolling bed is an oscillator — and the only way
+// to assert that is to build the graph against a context that records it. One line, and it
+// is what makes the law checkable instead of merely stated.
 function setAudioFactory(f) { _audioFactory = f; }
 
 function ensureAudio() {
@@ -2095,6 +2085,13 @@ var WALL_TABLE = (function () {
   return t;
 })();
 var ABYSS = 'rgb(9,8,14)';
+// The fold lines, from the palette's own edge colour rather than a second copy of it
+// typed out in the sweep. #f6f1e2 is (246,241,226); this is that, at three tenths.
+var COL_FOLD = (function () {
+  var h = COL_EDGE.replace('#', '');
+  return 'rgba(' + parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) +
+         ',' + parseInt(h.slice(4, 6), 16) + ',0.30)';
+})();
 function wallRow(sy) {
   var r = Math.floor((sy / H) * WALL_ROWS);
   return r < 0 ? 0 : (r > WALL_ROWS - 1 ? WALL_ROWS - 1 : r);
@@ -2791,7 +2788,7 @@ function sweep(ctx, run, cam) {
     }
 
     flushWalls(ctx, walls);
-    flushLines(ctx, folds, 'rgba(246,241,226,0.30)', 1);
+    flushLines(ctx, folds, COL_FOLD, 1);
     flushCreases(ctx, creases);
     closeBand();
   }

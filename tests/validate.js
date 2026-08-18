@@ -11,6 +11,27 @@ function mk(PL) {
   var V = {};
   var BALL_R = PL.BALL_R, SURF = PL.SURF;
 
+  // These two live here rather than in src/ because the GAME never calls them — only the
+  // validators do — and a helper that ships inside game.html for the benefit of a test is
+  // dead weight in the artifact.
+
+  // The magnitude of the ground's gradient at a point.
+  V.gradMag = function (g, wx, wy) {
+    var t = [0, 0];
+    PL.gradAt(g, wx, wy, t);
+    return Math.hypot(t[0], t[1]);
+  };
+
+  // LAW 9.2 — the disc a hazard owns. `sweep = pathRadius + its radius + BALL_R`, and for a
+  // chaser the path radius is its WHOLE LEASH, because that is how far it will walk to
+  // reach you. A TRIGGER never moves, so its path radius is zero and its `r` IS the disc.
+  V.hazSweep = function (b) {
+    var path = 0;
+    if (b.prim === 'PERIODIC') path = b.def.path === 'loop' ? b.def.radius : b.def.amp;
+    else if (b.prim === 'SEEKER' || b.prim === 'RIVAL') path = b.leash;
+    return path + b.r + BALL_R;
+  };
+
   // ---- LAW 5.2 / test 2 and 13 ---------------------------------------------
   // The steepest thing an author DECLARED: the piece's own height function sampled at
   // the corners the grid can actually represent. Anything the compiled grid does that is
@@ -54,7 +75,7 @@ function mk(PL) {
       if (interior && !V.isInterior(g, i, j, 2)) continue;
       for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++) {
         var x = g.ox + i + SUB[a], y = g.oy + j + SUB[b];
-        var s = PL.gradMag(g, x, y);
+        var s = V.gradMag(g, x, y);
         if (s > worst) { worst = s; at = [x, y]; }
       }
     }
@@ -228,7 +249,7 @@ function mk(PL) {
     var run = { grid: g, course: course, bodies: [], ball: { x: 0, y: 0 } };
     PL.buildBodies(run);
     run.bodies.forEach(function (b, i) {
-      var sweep = PL.hazSweep(b);
+      var sweep = V.hazSweep(b);
       var sx = PL.paperSpan(g, b.hx, b.hy, 0).span, sy = PL.paperSpan(g, b.hx, b.hy, 1).span;
       if (PL.solidAt(g, b.hx, b.hy) !== 1) {
         out.push({ i: i, name: b.name, why: 'anchored off the paper at ' + b.hx + ',' + b.hy });
@@ -304,7 +325,7 @@ function mk(PL) {
     for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
       var k = j * nx + i;
       var flat = g.solid[k] && g.surf[k] !== SURF.WATER &&
-                 PL.gradMag(g, g.ox + i + 0.5, g.oy + j + 0.5) <= 0.06;
+                 V.gradMag(g, g.ox + i + 0.5, g.oy + j + 0.5) <= 0.06;
       if (!flat) { dp[k] = 0; continue; }
       dp[k] = (i === 0 || j === 0) ? 1
             : 1 + Math.min(dp[k - 1], dp[k - nx], dp[k - nx - 1]);
@@ -324,7 +345,7 @@ function mk(PL) {
       solid++;
       if (g.surf[k] === SURF.WATER) continue;
       var x = g.ox + i + 0.5, y = g.oy + j + 0.5;
-      if (PL.gradMag(g, x, y) > 0.06) continue;
+      if (V.gradMag(g, x, y) > 0.06) continue;
       if (!V.isInterior(g, i, j, 4)) continue;
       var near = (course.hazards || []).some(function (h) {
         return Math.hypot(h.x - x, h.y - y) < 5;
@@ -451,7 +472,7 @@ function mk(PL) {
   // the surface's own drag: ROLL*G*s = MU*drag*v.
   V.terminalAt = function (course, x, y) {
     var g = course.grid;
-    var s = PL.gradMag(g, x, y);
+    var s = V.gradMag(g, x, y);
     return PL.ROLL * PL.G * s / (PL.MU * PL.SURF_DRAG[PL.surfAt(g, x, y)]);
   };
 

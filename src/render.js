@@ -73,6 +73,13 @@ var WALL_TABLE = (function () {
   return t;
 })();
 var ABYSS = 'rgb(9,8,14)';
+// The fold lines, from the palette's own edge colour rather than a second copy of it
+// typed out in the sweep. #f6f1e2 is (246,241,226); this is that, at three tenths.
+var COL_FOLD = (function () {
+  var h = COL_EDGE.replace('#', '');
+  return 'rgba(' + parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) +
+         ',' + parseInt(h.slice(4, 6), 16) + ',0.30)';
+})();
 function wallRow(sy) {
   var r = Math.floor((sy / H) * WALL_ROWS);
   return r < 0 ? 0 : (r > WALL_ROWS - 1 ? WALL_ROWS - 1 : r);
@@ -769,7 +776,7 @@ function sweep(ctx, run, cam) {
     }
 
     flushWalls(ctx, walls);
-    flushLines(ctx, folds, 'rgba(246,241,226,0.30)', 1);
+    flushLines(ctx, folds, COL_FOLD, 1);
     flushCreases(ctx, creases);
     closeBand();
   }
