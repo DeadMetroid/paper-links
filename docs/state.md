@@ -83,11 +83,14 @@ destructive, outward-facing change and is not one to make unasked.
 | 50 | course 1 is ramps and one camber, and my first draft of the test demanded three distinct leg kinds per course. Course 1 is authored verbatim from the brief; the floor is two, and the vocabulary check moved to the whole game. |
 | 51 | course 3 had a 79.5-tile stretch between checkpoints. Trimming legs could not fix it: the stretch between two flags is MANHATTAN-BOUND by where the flags are, and from (26,4.5) to (64,42.5) the floor was 76. Moving gate 2 three rows up fixed it. Course 4's shortcut route legitimately merges two legs, so a declared skip gets the two legs it gave up and not a tile more. |
 
-## Next three up
+## If this run is ever picked up again
 
-1. `README.md`, `ASSETS.md`, `docs/VIDEO_GUIDE.md` final; walk the video guide through once.
-2. Tick every box in `docs/FLOOR.md` from OBSERVED behaviour, never from code.
-3. `git ls-files` disclosure check, final commit.
+The build order is finished and every gate is green. The three things to re-run before
+touching anything, in this order, are `node tests/run.js`, `node tests/mutate.js` and
+`node tests/playthrough.js`. If a course is edited, `node tests/map.js <n>` prints the map
+and every validator and drives the oracle; `node tests/why.js <n>` says where the oracle
+lost the ball. If the renderer is edited, `node tests/shots.js --check` says whether any
+pixel moved. Untick the FLOOR boxes a change could have broken and re-watch them.
 
 ## Measured numbers
 
@@ -194,14 +197,20 @@ measured.
   18. The course was lengthened and steepened twice trying to reach 17; going further
   meant widening the lanes, which is the one thing that course is about. Every other par
   is the brief's number.
-- Git identity for commits is a non-personal placeholder — no real name or email in any
-  committed artifact (section 0 rule 11).
+- **Git identity.** `git config user.name/user.email` were set to a non-personal
+  placeholder at the first commit and still read that way, but this environment exports
+  `GIT_AUTHOR_*`/`GIT_COMMITTER_*`, which take precedence — see **Disclosure** above. No
+  file content carries a name or an address.
 
 ## Gaps / known unresolved
 
-- **Headless browser: resolved, first attempt.** `puppeteer-core` (no bundled download)
-  against `C:\Program Files\Google\Chrome\Application\chrome.exe` with
-  `--allow-file-access-from-files`. Both harnesses work. No fallback needed.
+- **Headless browser: resolved, first attempt.** `puppeteer-core`, which downloads no
+  browser of its own, pointed at an already-installed Chrome with
+  `--allow-file-access-from-files`. `tests/shots.js` takes `PL_BROWSER` as an override and
+  otherwise tries the default Chrome/Edge install locations on Windows, Linux and macOS —
+  the only absolute paths written down anywhere here, and the same on every machine. The
+  brief's warning about a driver that fetches its own Chromium was avoided by construction;
+  no fallback was needed and the posed-frame harness was never dropped.
 - `game.html` is deliberately NOT wrapped in an IIFE: top-level `var` in a classic script
   becomes a `window` property, which is how `tests/load.js` reads the same sources into a
   vm context. The posed-frame harness therefore drives the shipped artifact through the
