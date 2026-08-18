@@ -2326,12 +2326,16 @@ var ART = {
     ctx.restore();
   },
   cart: function (ctx, x, y) {
-    // Wheels at the BOTTOM CORNERS of the box's two camera-facing faces. Centred on the
-    // anchor they read as two dots painted on its lid; tucked wholly behind it they read
-    // as nothing at all. The prop sheet showed both in a second.
+    // Wheels on the MIDPOINTS of the box's two lower edges — big enough to break its
+    // silhouette, and a pale hub inside a dark tyre so they separate from the drop behind
+    // them. Centred on the anchor they read as two dots painted on its lid; tucked wholly
+    // behind it they read as nothing; and in a dark grey one shade off the backdrop they
+    // also read as nothing. The prop sheet showed all three, one pass each.
     boxIso(ctx, x, y, 1.6, 1.0, 11 * U, [212, 206, 188]);
-    orb(ctx, x + 32 * U, y + 20 * U, 7 * U, [78, 72, 68]);
-    orb(ctx, x - 2 * U, y + 30 * U, 7 * U, [78, 72, 68]);
+    orb(ctx, x + 28 * U, y + 26 * U, 10 * U, [56, 52, 50]);
+    orb(ctx, x - 5 * U, y + 22 * U, 10 * U, [56, 52, 50]);
+    orb(ctx, x + 28 * U, y + 26 * U, 4 * U, [196, 190, 176]);
+    orb(ctx, x - 5 * U, y + 22 * U, 4 * U, [196, 190, 176]);
   },
   gate: function (ctx, x, y) {
     tubeP(ctx, x, y, 2.4 * U, 24 * U, [230, 224, 208]);
