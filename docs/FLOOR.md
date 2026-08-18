@@ -15,11 +15,20 @@ the only way to lose this entry from inside the run.
 > keyboard path; `node tests/walk.js` drives the whole of `docs/VIDEO_GUIDE.md` beat by
 > beat, including closing the browser process and reopening it; `node tests/shots.js`
 > captures and hashes twenty-two posed frames. Every frame named below was looked at.
+>
+> **None of them passes a browser flag.** They used to pass
+> `--allow-file-access-from-files`, which a double-click does not — so every one of them
+> was testing a configuration no judge will have. The flag is gone from all three, and the
+> game boots, plays, saves, restores across a browser restart and builds a real 48 kHz
+> WebAudio graph without it.
 
 ## Rule 8 — the competition floor
 
 - [x] Opens by double-clicking `game.html` on `file://` — no server, no install
-      *(loaded from `file:///.../game.html` with no server running; menu up, `walk-1-menu.png`)*
+      *(loaded from a `file:///` URL with no server and NO browser flags — the double-click
+      configuration exactly; menu up, `walk-1-menu.png`. Checked separately that
+      `localStorage` writes and survives a browser restart without the flag, and that the
+      WebAudio graph builds: 48 kHz, a 96,000-sample noise loop, state "running".)*
 - [x] Playable start to finish in one sitting
       *(`tests/playthrough.js`: six courses completed in one session, ~110 s of play)*
 - [x] WIN state exists and is reachable: the round scorecard after the sixth cup

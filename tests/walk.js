@@ -35,7 +35,7 @@ async function main() {
   async function openBrowser() {
     browser = await puppeteer.launch({
       executablePath: exe, headless: 'new', userDataDir: PROFILE,
-      args: ['--allow-file-access-from-files', '--hide-scrollbars', '--force-device-scale-factor=1'],
+      args: ['--hide-scrollbars', '--force-device-scale-factor=1'],
     });
     page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 900 });

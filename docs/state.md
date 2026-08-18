@@ -48,6 +48,17 @@ void, the cup as a shaft with its near lip cutting the ball (`walk-6-cup.png`), 
 three-tile necks with 23+ tiles left to the cup, a clock that counts up, tests 31/44/45 for
 the ball through the edges, and 461 fills a frame against the first build's 681.
 
+## The last thing checked, and it mattered
+
+Every browser harness was passing `--allow-file-access-from-files`. **A double-click does
+not.** So all three were testing a configuration no judge will ever have, and the FLOOR's
+first box — "opens by double-clicking, no server, no install" — was being ticked against
+it. The flag is now gone from all three, and the artifact was checked cold with no flags at
+all: it boots, the ball moves under a held key, the course banks, `localStorage` writes,
+the save survives closing and reopening the browser process with the cursor back on
+CONTINUE, and the WebAudio graph builds for real — 48 kHz, a 96,000-sample noise loop
+(2 s at that rate, which is `NOISE_SECONDS`), context state "running". Zero console errors.
+
 ## Disclosure
 
 `git ls-files` lists 41 files including `CLAUDE.md`, `game.html`, `build.js`, `README.md`,

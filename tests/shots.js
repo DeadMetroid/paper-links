@@ -76,7 +76,7 @@ async function capture(opts) {
   var browser = await puppeteer.launch({
     executablePath: exe,
     headless: 'new',
-    args: ['--allow-file-access-from-files', '--hide-scrollbars', '--force-device-scale-factor=1'],
+    args: ['--hide-scrollbars', '--force-device-scale-factor=1'],
   });
   try {
     var page = await browser.newPage();
